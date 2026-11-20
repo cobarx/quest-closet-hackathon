@@ -28,7 +28,8 @@ const PathMenu = ({ mobile }) => {
   const p = mobile ? "mnav" : "nav";
   const [open, setOpen] = useState(false);
   const timer = useRef();
-  const hover = mobile ? {} : {
+  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const hover = !canHover ? {} : {
     onMouseEnter: () => { clearTimeout(timer.current); setOpen(true); },
     onMouseLeave: () => { timer.current = setTimeout(() => setOpen(false), 150); },
   };
