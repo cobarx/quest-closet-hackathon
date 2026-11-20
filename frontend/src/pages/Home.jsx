@@ -46,6 +46,7 @@ export default function Home() {
           <Link key={e.id} to="/events" className="min-w-[240px] rounded-xl border border-stone-800 bg-stone-900 p-4 hover:border-stone-600" data-testid={`home-event-${e.id}`}>
             <p className="font-semibold text-stone-100">{e.name}</p>
             {e[`genre_${lang}`] && <p className="mt-1 text-xs text-blue-200">{e[`genre_${lang}`]}</p>}
+            {e[`age_range_${lang}`] && <p className="mt-1 text-xs text-stone-300" data-testid={`home-event-age-${e.id}`}>{e[`age_range_${lang}`]}</p>}
             <p className="mt-1 flex items-center gap-1 text-xs text-stone-400"><MapPin size={12} />{e.location} · {e.drive_time}</p>
             <p className="mt-1 text-xs text-amber-400">{e[`dates_text_${lang}`] || e.start_date}</p>
             {e[`recurrence_${lang}`] && <p className="mt-1 text-xs text-stone-400">{e[`recurrence_${lang}`]}</p>}

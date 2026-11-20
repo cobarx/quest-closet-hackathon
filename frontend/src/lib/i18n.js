@@ -76,7 +76,7 @@ const D = {
     ob_weight: "Weight (kg)", ob_budget: "Budget per event (CAD)", ob_selfie: "Your selfie",
     ob_selfie_hint: "Well-lit, front-facing. JPG or PNG, 10 MB max.", ob_upload: "Upload a selfie",
     ob_replace: "Replace", save: "Save", saved: "Profile saved", optional: "optional",
-    g_woman: "Woman", g_man: "Man", g_nb: "Non-binary", g_none: "Prefer not to say",
+    g_woman: "Female", g_man: "Male", g_nb: "Non-binary", g_none: "Prefer not to say",
         ev_title: "LARP in Quebec", ev_sub: "LARP events roughly 3 to 4 hours' drive from Montreal, found by AI on the web.",
     ev_refresh: "Refresh events", ev_refreshing: "Searching…", ev_checked: "Checked",
     ev_from_mtl: "from Montreal", ev_empty: "No events yet. Run a search.",

@@ -7,11 +7,6 @@ import { useEvents } from "@/components/EventPicker";
 import { useLang } from "@/lib/i18n";
 import { useApp, API } from "@/lib/appState";
 
-const ageInGenre = (age, genre = "") => {
-  const nums = age.match(/\d+/g);
-  return !!nums && nums.every((n) => genre.includes(n));
-};
-
 export default function Events() {
   const { t, lang } = useLang();
   const { api, toast } = useApp();
@@ -63,7 +58,7 @@ export default function Events() {
               ) : <span data-testid={`event-name-${e.id}`}>{e.name}</span>}
             </h3>
             {e[`genre_${lang}`] && <p className="mt-1.5 text-sm font-medium text-blue-200" data-testid={`event-genre-${e.id}`}>{e[`genre_${lang}`]}</p>}
-            {e[`age_range_${lang}`] && !ageInGenre(e[`age_range_${lang}`], e[`genre_${lang}`]) && (
+            {e[`age_range_${lang}`] && (
               <p className="mt-1.5 flex items-start gap-1.5 text-sm text-stone-300" data-testid={`event-age-${e.id}`}>
                 <Users size={14} className="mt-0.5 shrink-0 text-amber-500" />{e[`age_range_${lang}`]}
               </p>

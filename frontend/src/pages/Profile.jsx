@@ -11,7 +11,7 @@ import { useLang, money } from "@/lib/i18n";
 import { useApp } from "@/lib/appState";
 
 const CITIES = ["Montréal", "Laval", "Longueuil", "Québec", "Gatineau", "Sherbrooke", "Trois-Rivières", "Saint-Jérôme", "Granby", "Drummondville", "Laurentides", "Lanaudière", "Montérégie", "Estrie", "Mauricie", "Autre / Other"];
-const GENDERS = [["woman", "g_woman"], ["man", "g_man"], ["non-binary person", "g_nb"], ["", "g_none"]];
+const GENDERS = [["female", "g_woman"], ["male", "g_man"], ["non-binary person", "g_nb"], ["", "g_none"]];
 
 export default function Profile() {
   const { t, lang } = useLang();

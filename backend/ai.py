@@ -56,9 +56,9 @@ async def search_events():
         '{"name": str (official name only, no dates), "start_date": "YYYY-MM-DD" (next upcoming occurrence, required), "end_date": "YYYY-MM-DD" (end of that occurrence), '
         '"dates_text_en": str (ONLY the next upcoming occurrence: date AND start/end time if known, e.g. "Sat Nov 21, 2026, 10 a.m. – 11 p.m."), "dates_text_fr": str (same in French), '
         '"recurrence_en": str (the repeat pattern or other UPCOMING dates only, e.g. "Every summer weekend, May–Sept"; empty if one-off), "recurrence_fr": str, '
-        '"age_range_en": str (e.g. "16+", "18+", "All ages (minors with a guardian)"; empty if not stated), "age_range_fr": str, '
+        '"age_range_en": str (REQUIRED: look up the organizer registration/rules/FAQ page for the minimum age or minors policy and summarize it briefly, e.g. "16+", "18+", "All ages (minors with a guardian)"; empty only if no page states it), "age_range_fr": str, '
         '"location": str (town, region), "distance_km": int (driving km from Montreal), "drive_time": str like "2h15", '
-        '"genre_en": str (genre/tone, include the age group if stated, e.g. "Medieval, teen LARP (ages 12–17)"), "genre_fr": str, "description_en": str (max 30 words), "description_fr": str (max 30 words), '
+        '"genre_en": str (genre and tone only, no age info, e.g. "Medieval fantasy, teen LARP"), "genre_fr": str, "description_en": str (max 30 words), "description_fr": str (max 30 words), '
         '"url": str (official organizer site)}. Only include real events you found in search results.'
     )
     resp = await _call(lambda: chat.send_message_with_tools(UserMessage(text=prompt)))
