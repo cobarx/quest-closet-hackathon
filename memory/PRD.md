@@ -47,3 +47,13 @@ Added on 2026-11-20: when a selfie is added, the user must enter height, weight 
 - P1: rate limits or quotas on the paid AI endpoints; masking selfies and chat from session replay; a minimum-price filter; server-side checks on selfie size
 - P1: connect to the real marketplace cart and listings, and let sellers enter sizing
 - P2: Whisper voice input for browsers without speech recognition; shareable look cards
+
+## Implemented (2026-11-20, iteration 7: preview setup + FR/EN + catalog expansion)
+- Preview setup: created backend/frontend .env files, installed dependencies, and provisioned a claimable Stripe test sandbox.
+- Guest mode: when the Clerk keys are missing, the site runs for guests (X-Guest-Id) instead of showing a blank page. Checkout, orders and payment status work for guests. Sign-in turns on by itself once the keys are added.
+- FR/EN toggle in the header (saved on the device). Covers all UI text, product names and descriptions (catalog_fr.py), events (*_en/*_fr fields), stylist replies (lang param) and voice recognition (fr-CA).
+- Events: search ported from the old version (retries, up to 15 events, bilingual fields), a first search on startup when the list is empty, and clean-up of past and duplicate events.
+- Catalog grew from 42 to 62 items: 2 clubs, a mace, an axe, a spear, gilded breastplate, lamellar, valkyrie bodice, lionheart harness, great helm, sun shield, greaves, plus orc, leather lamellar, druid, monk, corsair, skull mask, bandolier and gold paint. Armor descriptions now give construction, coverage, closures and weight. init() refreshes catalog text on every start.
+- Stylist: replies "No items match your query." (FR: "Aucun article ne correspond à votre recherche.") when nothing matches. Voice requests get a spoken reply, and the mic pauses while it speaks.
+- Mirror empty state: centered and fitted inside the 4:5 frame at all widths (container queries).
+- Not yet tested by the testing agent (the user chose to skip testing).
