@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { errorText, outfitKey } from "../api";
 
 const AUTO_DELAY_MS = 1200;
+const BASE_KEY = outfitKey({}, "");
 
 export const useTryOn = (api, equipped, styleNote) => {
   const [selfie, setSelfieState] = useState(null);
@@ -24,8 +25,9 @@ export const useTryOn = (api, equipped, styleNote) => {
     setGenerating(false);
   }, []);
 
-  const generate = useCallback(async (items, note) => {
+  const generate = useCallback(async (items, rawNote) => {
     if (!selfieRef.current) return toast.error("Take or upload a selfie first");
+    const note = Object.keys(items).length ? rawNote : "";
     clearTimeout(timerRef.current);
     const id = ++reqId.current;
     setGenerating(true);
@@ -71,8 +73,8 @@ export const useTryOn = (api, equipped, styleNote) => {
     setRenderedKey(outfitKey(look.items, look.note));
   }, [cancel]);
 
-  const key = outfitKey(equipped, styleNote);
   const hasItems = Object.keys(equipped).length > 0;
+  const key = hasItems ? outfitKey(equipped, styleNote) : BASE_KEY;
 
   useEffect(() => {
     if (!selfie || key === renderedKey) return undefined;
@@ -82,6 +84,10 @@ export const useTryOn = (api, equipped, styleNote) => {
       setPreview(cached);
       setRenderedKey(key);
       return undefined;
+    }
+    if (!cacheRef.current.has(BASE_KEY)) {
+      timerRef.current = setTimeout(() => generate({}, ""), 0);
+      return () => clearTimeout(timerRef.current);
     }
     timerRef.current = setTimeout(() => generate(outfitRef.current.equipped, outfitRef.current.styleNote), hasItems ? AUTO_DELAY_MS : 0);
     return () => clearTimeout(timerRef.current);
