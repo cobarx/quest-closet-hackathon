@@ -196,7 +196,9 @@ async def _load_available(item_ids: list[str]) -> list[Product]:
 
 def _gear_text(items: list[Product]) -> str:
     if not items:
-        return "No gear selected: keep the person's own clothing exactly as in the selfie and add nothing."
+        return ("No gear selected: this is the person's BASE MODEL. Replace their clothing with extremely basic, plain clothes only: "
+                "a plain fitted light-grey crew-neck t-shirt, plain charcoal straight-leg trousers and simple plain black shoes. "
+                "No logos, patterns, jackets, armor, jewelry, hats, weapons or props. Neutral relaxed standing pose, arms slightly away from the body.")
     listing = "\n".join(f"- Image {i + 2}: {p.name} ({p.category}, {p.color}) - {p.description}" for i, p in enumerate(items))
     return (f"The following reference images are marketplace listings. Dress the person in ALL of them, reproducing each one's exact shape, color and material:\n{listing}\n"
             "Every visible garment, armor piece, weapon and accessory MUST be one of these listings. Where the body isn't covered by a listing, "

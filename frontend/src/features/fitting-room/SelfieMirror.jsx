@@ -53,7 +53,7 @@ const CompareButton = ({ onPeek }) => (
   </button>
 );
 
-const MirrorStage = ({ selfie, preview, generating, onCamera, onUpload }) => {
+const MirrorStage = ({ selfie, preview, generating, itemCount, onCamera, onUpload }) => {
   const [peek, setPeek] = useState(false);
   const shown = peek || !preview ? selfie : preview;
   const idle = selfie && !generating;
@@ -63,7 +63,8 @@ const MirrorStage = ({ selfie, preview, generating, onCamera, onUpload }) => {
         ? <img src={shown} alt="Your try-on preview" className="fr-fade-in h-full w-full object-contain" data-testid="virtual-tryon-preview-image" key={shown.slice(-40)} />
         : <EmptyMirror onCamera={onCamera} onUpload={onUpload} />}
       {generating && <MirrorLoading />}
-      {idle && !preview && <span className={`absolute left-3 top-3 ${chip} text-[#555555]`} data-testid="mirror-base-label">Your base model</span>}
+      {idle && preview && !itemCount && <span className={`absolute left-3 top-3 ${chip} text-[#555555]`} data-testid="mirror-base-label">Your base model</span>}
+      {generating && !preview && <span className={`absolute left-3 top-3 ${chip} text-[#555555]`} data-testid="mirror-building-label">Building your full-body model</span>}
       {idle && preview && <CompareButton onPeek={setPeek} />}
     </div>
   );
@@ -71,13 +72,13 @@ const MirrorStage = ({ selfie, preview, generating, onCamera, onUpload }) => {
 
 const generateLabel = ({ generating, preview, dirty, itemCount }) => {
   if (generating) return "Conjuring your look...";
-  if (preview) return dirty ? "Update preview" : "Regenerate";
-  return itemCount ? `Try on ${itemCount} ${itemCount === 1 ? "item" : "items"}` : "Pick gear to try on";
+  if (preview) return dirty ? "Update preview" : itemCount ? "Regenerate" : "Regenerate base model";
+  return itemCount ? `Try on ${itemCount} ${itemCount === 1 ? "item" : "items"}` : "Build my base model";
 };
 
 const MirrorActions = ({ preview, generating, dirty, itemCount, onGenerate, looks, onPickLook }) => (
   <div className="space-y-3 p-4">
-    <button onClick={onGenerate} disabled={generating || !itemCount} className={`fr-btn-primary w-full ${dirty ? "fr-pulse" : ""}`} data-testid="generate-tryon-button">
+    <button onClick={onGenerate} disabled={generating} className={`fr-btn-primary w-full ${dirty ? "fr-pulse" : ""}`} data-testid="generate-tryon-button">
       {preview ? <RefreshCw className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
       {generateLabel({ generating, preview, dirty, itemCount })}
     </button>
@@ -107,7 +108,7 @@ export const SelfieMirror = ({ profile, onEditProfile, selfie, onSelfie, preview
   return (
     <section className="fr-panel overflow-hidden" data-testid="fitting-mirror">
       <MirrorHeader selfie={selfie} profile={profile} onEditProfile={onEditProfile} onNewPhoto={openFile} />
-      <MirrorStage selfie={selfie} preview={preview} generating={generating} onCamera={() => setCamOpen(true)} onUpload={openFile} />
+      <MirrorStage selfie={selfie} preview={preview} generating={generating} itemCount={itemCount} onCamera={() => setCamOpen(true)} onUpload={openFile} />
       {selfie && <MirrorActions preview={preview} generating={generating} dirty={dirty} itemCount={itemCount} onGenerate={onGenerate} looks={looks} onPickLook={onPickLook} />}
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} data-testid="selfie-upload-input" />
       <CameraDialog open={camOpen} onOpenChange={setCamOpen} onCapture={onSelfie} />

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { errorText, outfitKey } from "../api";
 
 const AUTO_DELAY_MS = 1200;
+const BASE_KEY = outfitKey({}, "");
 
 export const useTryOn = (api, equipped, styleNote) => {
   const [selfie, setSelfieState] = useState(null);
@@ -17,14 +18,16 @@ export const useTryOn = (api, equipped, styleNote) => {
   outfitRef.current = { equipped, styleNote };
   const selfieRef = useRef(null);
   const profileRef = useRef(null);
+  const cacheRef = useRef(new Map());
 
   const cancel = useCallback(() => {
     reqId.current += 1;
     setGenerating(false);
   }, []);
 
-  const generate = useCallback(async (items, note) => {
+  const generate = useCallback(async (items, rawNote) => {
     if (!selfieRef.current) return toast.error("Take or upload a selfie first");
+    const note = Object.keys(items).length ? rawNote : "";
     clearTimeout(timerRef.current);
     const id = ++reqId.current;
     setGenerating(true);
@@ -33,9 +36,11 @@ export const useTryOn = (api, equipped, styleNote) => {
         selfie: selfieRef.current, item_ids: Object.values(items).map((i) => i.id), style_note: note, profile: profileRef.current,
       });
       if (id !== reqId.current) return;
+      const k = outfitKey(items, note);
+      cacheRef.current.set(k, image);
       setPreview(image);
-      setRenderedKey(outfitKey(items, note));
-      setLooks((l) => [{ id: `look-${id}`, image, items, note }, ...l].slice(0, 8));
+      setRenderedKey(k);
+      if (Object.keys(items).length) setLooks((l) => [{ id: `look-${id}`, image, items, note }, ...l].slice(0, 8));
     } catch (e) {
       if (id === reqId.current) toast.error(errorText(e, "Preview failed, please try again"));
     } finally {
@@ -46,6 +51,7 @@ export const useTryOn = (api, equipped, styleNote) => {
   const setSelfie = useCallback((face) => {
     cancel();
     selfieRef.current = face;
+    cacheRef.current.clear();
     setSelfieState(face);
     setPreview(null);
     setLooks([]);
@@ -55,6 +61,7 @@ export const useTryOn = (api, equipped, styleNote) => {
 
   const setProfile = useCallback((profile) => {
     profileRef.current = profile;
+    cacheRef.current.clear();
     cancel();
     setRenderedKey(null);
     setEpoch((e) => e + 1);
@@ -66,18 +73,23 @@ export const useTryOn = (api, equipped, styleNote) => {
     setRenderedKey(outfitKey(look.items, look.note));
   }, [cancel]);
 
-  const key = outfitKey(equipped, styleNote);
   const hasItems = Object.keys(equipped).length > 0;
+  const key = hasItems ? outfitKey(equipped, styleNote) : BASE_KEY;
 
   useEffect(() => {
     if (!selfie || key === renderedKey) return undefined;
     cancel();
-    if (!hasItems) {
-      setPreview(null);
+    const cached = cacheRef.current.get(key);
+    if (cached) {
+      setPreview(cached);
       setRenderedKey(key);
       return undefined;
     }
-    timerRef.current = setTimeout(() => generate(outfitRef.current.equipped, outfitRef.current.styleNote), AUTO_DELAY_MS);
+    if (!cacheRef.current.has(BASE_KEY)) {
+      timerRef.current = setTimeout(() => generate({}, ""), 0);
+      return () => clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => generate(outfitRef.current.equipped, outfitRef.current.styleNote), hasItems ? AUTO_DELAY_MS : 0);
     return () => clearTimeout(timerRef.current);
   }, [selfie, key, renderedKey, hasItems, epoch, cancel, generate]);
 
