@@ -101,3 +101,74 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+user_problem_statement: "Set up preview of imported Quest Closet LARP marketplace. Then: (1) events search was failing - restore it; (2) bring back FR/EN UI toggle; (3) keep 'Step into the mirror' centered and fitted in its frame at all sizes; (4) more catalog variety incl. a club, more golden armor, more specific armor descriptions; (5) when a (voice) stylist request matches no available items, the assistant says 'No items match your query.'"
+
+backend:
+  - task: "Guest mode when Clerk keys missing (checkout/orders/payment status accept X-Guest-Id)"
+    implemented: true
+    working: "NA"
+    file: "backend/store.py (signed_user)"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Signed dependency falls back to guest id while CLERK keys unset. Stripe claimable sandbox provisioned (STRIPE_SECRET_KEY in backend/.env)."
+  - task: "Catalog expansion + French text (62 items, name_fr/description_fr)"
+    implemented: true
+    working: "NA"
+    file: "backend/fitting_room_catalog.py, backend/catalog_fr.py, backend/fitting_room.py init()"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "20 new items (2 clubs, mace, axe, spear, 6 gilded armor/helm/shield/greaves etc). Armor descriptions rewritten. init() $sets managed text fields every boot."
+  - task: "Stylist no-match + language"
+    implemented: true
+    working: "NA"
+    file: "backend/fitting_room.py assistant()"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "AssistantRequest.lang en|fr. Response has no_match bool; when nothing matches reply is exactly 'No items match your query.' (fr: 'Aucun article ne correspond à votre recherche.') with no equips/filters."
+  - task: "Events search (bilingual, retries, startup seed, stale cleanup)"
+    implemented: true
+    working: "NA"
+    file: "backend/store.py refresh_events/_refresh_job"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "POST /api/events/refresh (X-Guest-Id header) runs ~1-2 min in background; GET /api/events/refresh polls state; GET /api/events lists with *_en/*_fr fields."
+
+frontend:
+  - task: "FR/EN toggle across site"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/i18n/*, header LangToggle (data-testid lang-toggle-en / lang-toggle-fr)"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Persisted in localStorage qc_lang. Product names/descriptions, events, stylist replies, speech recognition language follow it."
+  - task: "Mirror empty state centered/fitted"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/features/fitting-room/SelfieMirror.jsx, fitting-room.css"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Verified 0 overflow at 1920/1300/1100/800/390 in EN and FR."

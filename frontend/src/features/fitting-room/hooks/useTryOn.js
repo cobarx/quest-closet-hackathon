@@ -5,7 +5,7 @@ import { errorText, outfitKey } from "../api";
 const AUTO_DELAY_MS = 1200;
 const BASE_KEY = outfitKey({}, "");
 
-export const useTryOn = (api, equipped, styleNote) => {
+export const useTryOn = (api, equipped, styleNote, text = { needSelfie: "Take or upload a selfie first", failed: "Preview failed, please try again" }) => {
   const [selfie, setSelfieState] = useState(null);
   const [preview, setPreview] = useState(null);
   const [renderedKey, setRenderedKey] = useState(null);
@@ -19,6 +19,8 @@ export const useTryOn = (api, equipped, styleNote) => {
   const selfieRef = useRef(null);
   const profileRef = useRef(null);
   const cacheRef = useRef(new Map());
+  const messages = useRef(text);
+  messages.current = text;
 
   const cancel = useCallback(() => {
     reqId.current += 1;
@@ -26,7 +28,7 @@ export const useTryOn = (api, equipped, styleNote) => {
   }, []);
 
   const generate = useCallback(async (items, rawNote) => {
-    if (!selfieRef.current) return toast.error("Take or upload a selfie first");
+    if (!selfieRef.current) return toast.error(messages.current.needSelfie);
     const note = Object.keys(items).length ? rawNote : "";
     clearTimeout(timerRef.current);
     const id = ++reqId.current;
@@ -42,7 +44,7 @@ export const useTryOn = (api, equipped, styleNote) => {
       setRenderedKey(k);
       if (Object.keys(items).length) setLooks((l) => [{ id: `look-${id}`, image, items, note }, ...l].slice(0, 8));
     } catch (e) {
-      if (id === reqId.current) toast.error(errorText(e, "Preview failed, please try again"));
+      if (id === reqId.current) toast.error(errorText(e, messages.current.failed));
     } finally {
       if (id === reqId.current) setGenerating(false);
     }

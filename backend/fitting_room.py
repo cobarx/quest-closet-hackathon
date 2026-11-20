@@ -14,6 +14,7 @@ from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo import ASCENDING, IndexModel
 
+from catalog_fr import FR
 from fitting_room_catalog import SEED_PRODUCTS
 
 logger = logging.getLogger(__name__)
@@ -59,6 +60,8 @@ class Product(BaseModel):
     seller: str
     material: str
     description: str
+    name_fr: str = ""
+    description_fr: str = ""
     tags: list[str] = []
     image: str
     currency: str = "USD"
@@ -87,6 +90,11 @@ class AssistantRequest(BaseModel):
     filters: dict = Field(default_factory=dict)
     style_note: str = ""
     profile: BodyProfile | None = None
+    lang: str = Field("en", pattern="^(en|fr)$")
+
+
+# Seed-managed text is refreshed on every start so catalog copy edits and translations reach the DB.
+MANAGED_FIELDS = ("name", "description", "material", "image", "tags", "name_fr", "description_fr")
 
 
 async def init(db):
@@ -94,7 +102,9 @@ async def init(db):
     _db = db
     await db[COLLECTION].create_indexes(INDEXES)
     for p in SEED_PRODUCTS:
+        p["name_fr"], p["description_fr"] = FR.get(p["id"], ("", ""))
         await db[COLLECTION].update_one({"id": p["id"]}, {"$setOnInsert": p}, upsert=True)
+        await db[COLLECTION].update_one({"id": p["id"]}, {"$set": {k: p[k] for k in MANAGED_FIELDS}})
         await db[COLLECTION].update_one({"id": p["id"], "sizing": {"$exists": False}}, {"$set": {"sizing": p["sizing"]}})
         await db[COLLECTION].update_one({"id": p["id"], "wearable": {"$exists": False}}, {"$set": {"wearable": p.get("wearable", True)}})
 
@@ -135,7 +145,7 @@ def _build_query(f: ProductQuery) -> dict:
         query["price"] = price
     if f.q:
         rx = {"$regex": re.escape(f.q), "$options": "i"}
-        query["$or"] = [{"name": rx}, {"description": rx}, {"tags": rx}, {"color": rx}]
+        query["$or"] = [{"name": rx}, {"description": rx}, {"name_fr": rx}, {"description_fr": rx}, {"tags": rx}, {"color": rx}]
     return query
 
 
@@ -246,7 +256,7 @@ async def try_on(req: TryOnRequest):
 ASSISTANT_SYSTEM = """You are "The Quartermaster", a witty but concise AI stylist inside a LARP gear marketplace's virtual fitting room.
 The user sees a live AI preview of themselves wearing the equipped items. Their "selection" holds worn items plus items set aside (taken off but kept to swap back in).
 You can change what they wear and filter the catalog. You may ONLY suggest, mention or equip available marketplace listings from this catalog, by exact id. Never invent items, brands or variants.
-When a body profile is given, the list below only contains listings in the user's size. If the user asks for something that isn't listed, say it isn't available in their size (or at all) right now and offer the closest real listing.
+When a body profile is given, the list below only contains listings in the user's size.
 Available listings (id | name | category | price USD | gender | color | aesthetic | tags | sizes | fits height cm | fits weight kg | one-off):
 {catalog}
 
@@ -257,13 +267,17 @@ Rules:
 - One item per category can be equipped (helmet, armor, cloak, tunic, boots, weapon, shield, accessory). Equipping replaces the item in that category.
 - Respect budget requests strictly (e.g. "under $50 each" means every equipped item price < 50).
 - "Darker"/"lighter" aesthetic: swap items toward aesthetic=dark/light and darker/lighter colors, and set style_note for mood/lighting.
-- If a request can't be matched exactly, pick the closest items and say so honestly.
+- If a request is only partly matched (e.g. a full kit where one piece is missing), equip what does match and say honestly what is missing.
 - Use filters to show the user relevant catalog results (e.g. category=helmet, color=black). Set filters to null to leave them unchanged.
+  Filter values must be the catalog's English values (category, color, aesthetic). "q" is one short English keyword or null; prefer category/color over q.
 - If the user's body profile is given, only equip items whose fit range (height/weight) includes them, and prefer their gender fit or unisex. Mention size when helpful, and flag one-of-a-kind pieces.
 - Keep reply to 1-3 short sentences, mention item names and prices.
+- If the user asks for items and NO available listing matches what they asked for (the kind of item together with any color, material,
+  style, price cap or size they named), set "no_match": true, equip nothing, leave filters null and do not offer substitutes.
+  Example: "a pink helmet" with no pink helmet listed -> no_match. Otherwise "no_match": false.
 
 Respond with ONLY a JSON object, no markdown:
-{{"reply": str, "equip": [ids], "unequip": [ids], "remove": [ids], "clear_all": bool,
+{{"reply": str, "no_match": bool, "equip": [ids], "unequip": [ids], "remove": [ids], "clear_all": bool,
  "filters": null | {{"category": str|null, "gender": "men"|"women"|"unisex"|null, "color": str|null, "aesthetic": "dark"|"light"|"neutral"|null, "max_price": number|null, "q": str|null}},
  "style_note": str|null, "highlight": [ids]}}
 style_note is a short mood/lighting/pose instruction for the image generator (null keeps the current one, "" clears it)."""
@@ -284,10 +298,11 @@ def _parse_json(text: str) -> dict:
     return json.loads(match.group(0))
 
 
-def _catalog_line(p: Product) -> str:
+def _catalog_line(p: Product, lang: str = "en") -> str:
     z = p.sizing
     sizing = f"{'/'.join(z.sizes)} | {z.min_height_cm}-{z.max_height_cm} | {z.min_weight_kg}-{z.max_weight_kg} | {'yes' if z.one_of_a_kind else 'no'}" if z else "? | ? | ? | no"
-    return f"{p.id} | {p.name} | {p.category} | {p.price:g} | {p.gender} | {p.color} | {p.aesthetic} | {', '.join(p.tags)} | {sizing}"
+    name = (p.name_fr or p.name) if lang == "fr" else p.name
+    return f"{p.id} | {name} | {p.category} | {p.price:g} | {p.gender} | {p.color} | {p.aesthetic} | {', '.join(p.tags)} | {sizing}"
 
 
 def _stylist_prompt(req: AssistantRequest) -> str:
@@ -298,9 +313,15 @@ def _stylist_prompt(req: AssistantRequest) -> str:
             f"Current catalog filters: {req.filters or 'none'}\nCurrent style note: {req.style_note or 'none'}\n\nUser: {req.message}")
 
 
-async def _ask_stylist(catalog: str, text: str) -> dict:
+LANG_RULE = {"en": "Always write the reply in English.",
+             "fr": "Always write the reply in Québec French (the user may speak French or English). Use the item names exactly as listed."}
+NO_MATCH = {"en": "No items match your query.", "fr": "Aucun article ne correspond à votre recherche."}
+
+
+async def _ask_stylist(catalog: str, text: str, lang: str = "en") -> dict:
+    system = ASSISTANT_SYSTEM.format(catalog=catalog) + "\n" + LANG_RULE[lang]
     chat = LlmChat(api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"stylist-{uuid.uuid4()}",
-                   system_message=ASSISTANT_SYSTEM.format(catalog=catalog)).with_model("openai", "gpt-5.4")
+                   system_message=system).with_model("openai", "gpt-5.4")
     try:
         data = _parse_json(await chat.send_message(UserMessage(text=text)))
     except Exception as exc:
@@ -322,26 +343,65 @@ def _clean_filters(filters) -> dict | None:
     return {k: v for k, v in filters.items() if k in FILTER_KEYS and isinstance(v, (str, int, float)) and v != ""}
 
 
+def _num(value) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+async def _filters_match_nothing(filters: dict | None, req: AssistantRequest) -> bool:
+    """True when the stylist's filters (merged with the current ones) would leave the fitting-room catalog empty."""
+    if not filters:
+        return False
+    merged = {**{k: v for k, v in req.filters.items() if k in FILTER_KEYS and v not in (None, "")}, **filters}
+    text = lambda k: str(merged[k]) if merged.get(k) not in (None, "") else None
+    query = _build_query(ProductQuery(
+        category=text("category"), gender=text("gender"), color=text("color"), aesthetic=text("aesthetic"), q=text("q"),
+        min_price=_num(merged.get("min_price")), max_price=_num(merged.get("max_price")), wearable=True,
+        height_cm=req.profile.height_cm if req.profile else None, weight_kg=req.profile.weight_kg if req.profile else None))
+    query["in_stock"] = {"$ne": False}
+    return await _db[COLLECTION].count_documents(query, limit=1) == 0
+
+
+def _no_match_response(lang: str) -> dict:
+    return {"reply": NO_MATCH[lang], "no_match": True, "equip": [], "unequip": [], "remove": [], "clear_all": False,
+            "filters": None, "style_note": None, "highlight": []}
+
+
 @router.post("/assistant")
 async def assistant(req: AssistantRequest):
     all_products = await _all_products()
     known = {p.id for p in all_products}
     by_id = {p.id: p for p in all_products if p.in_stock and p.wearable and (not req.profile or _fits(p, req.profile))}
-    data = await _ask_stylist("\n".join(_catalog_line(p) for p in by_id.values()), _stylist_prompt(req))
+    data = await _ask_stylist("\n".join(_catalog_line(p, req.lang) for p in by_id.values()), _stylist_prompt(req), req.lang)
     offered = _ids(data, "equip", {p.id for p in all_products if p.in_stock})
     equip = [i for i in offered if i in by_id]
-    reply = str(data.get("reply") or "Done.")
-    dropped = [p.name for p in all_products if p.id in offered and p.id not in by_id]
+    filters = _clean_filters(data.get("filters"))
+    highlight = _ids(data, "highlight", set(by_id))
+    if filters and await _filters_match_nothing(filters, req):
+        # A stray keyword (often a translated phrase) is the usual culprit: drop it before giving up on the filters.
+        filters = {k: v for k, v in filters.items() if k != "q"} or None
+        if filters and await _filters_match_nothing(filters, req):
+            filters = None
+            if not equip and not highlight:
+                return _no_match_response(req.lang)
+    if not equip and not highlight and data.get("no_match") is True:
+        return _no_match_response(req.lang)
+    reply = str(data.get("reply") or ("C'est fait." if req.lang == "fr" else "Done."))
+    dropped = [(p.name_fr or p.name) if req.lang == "fr" else p.name for p in all_products if p.id in offered and p.id not in by_id]
     if dropped:
-        reply += f" (Skipped {', '.join(dropped)}: not sized for your measurements.)"
+        reply += (f" ({', '.join(dropped)} : pas offert dans vos mesures.)" if req.lang == "fr"
+                  else f" (Skipped {', '.join(dropped)}: not sized for your measurements.)")
     note = data.get("style_note")
     return {
         "reply": reply,
+        "no_match": False,
         "equip": equip,
         "unequip": _ids(data, "unequip", known),
         "remove": _ids(data, "remove", known),
         "clear_all": bool(data.get("clear_all")),
-        "filters": _clean_filters(data.get("filters")),
+        "filters": filters,
         "style_note": note if isinstance(note, str) else None,
-        "highlight": _ids(data, "highlight", set(by_id)),
+        "highlight": highlight,
     }

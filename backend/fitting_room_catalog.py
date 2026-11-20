@@ -6,7 +6,8 @@ PRODUCT_FIELDS = ("id", "name", "category", "price", "gender", "color", "aesthet
 
 def _p(*values):
     item = dict(zip(PRODUCT_FIELDS, values, strict=True))
-    return item | {"image": IMG + item["image"] + ".jpeg", "currency": "USD", "in_stock": True}
+    image = item["image"] if item["image"].startswith("http") else IMG + item["image"] + ".jpeg"
+    return item | {"image": image, "currency": "USD", "in_stock": True}
 
 
 SEED_PRODUCTS = [
@@ -21,15 +22,15 @@ SEED_PRODUCTS = [
     _p("helm-elven-circlet", "Moonstone Elven Circlet", "helmet", 38, "women", "silver", "light", "uncommon", "Sylvian Loom", "Silver-plated brass, moonstone",
        "Leaf filigree circlet set with a glowing moonstone.", ["elf", "jewelry", "noble"], "39b6917867625ccfb5f1dcee8ce056e7e8b68bb324d7d8a7a0dfc2531ae54f9a"),
     _p("armor-gothic-cuirass", "Gothic Plate Cuirass", "armor", 145, "unisex", "silver", "light", "epic", "Ironcrest Armory", "18-gauge fluted steel",
-       "Fluted breast and back plate with adjustable leather straps.", ["knight", "paladin", "plate"], "44a8ed9861bd8e903ddb23f461ec5e90066ac138404d76fc6c48be528555fb7f"),
+       "Fluted 18-gauge steel breast and back plate with a rolled neck edge and a hinged left side. Two buckled leather side straps plus shoulder straps; covers chest to waist. About 6.5 kg, worn over a gambeson. Lightly oiled against rust.", ["knight", "paladin", "plate"], "44a8ed9861bd8e903ddb23f461ec5e90066ac138404d76fc6c48be528555fb7f"),
     _p("armor-black-brigandine", "Blackened Brigandine", "armor", 112, "unisex", "black", "dark", "rare", "Gallows & Forge Guild", "Leather over riveted steel plates",
-       "Dark brigandine vest with hundreds of steel rivets. Death-knight approved.", ["dark knight", "mercenary"], "dfc08c1eb5421e9492b7d7be336844a0192eb62e148961ac91e7541ade7603d0"),
+       "Black leather vest lined with overlapping steel plates held by 400+ brass-capped rivets. Four front buckles; covers chest, back and upper hips. About 7 kg and flexible enough for stage combat. Death-knight approved.", ["dark knight", "mercenary"], "dfc08c1eb5421e9492b7d7be336844a0192eb62e148961ac91e7541ade7603d0"),
     _p("armor-studded-jerkin", "Studded Leather Jerkin", "armor", 59, "unisex", "brown", "neutral", "uncommon", "Old Oak Tanner", "Veg-tan leather, iron studs",
-       "Buckled ranger jerkin, light enough for long woodland campaigns.", ["ranger", "rogue", "leather"], "fd282cd6010071f45fb77df888f52a00e736d44b8419cb9452492bda3a3ae358"),
+       "3 mm vegetable-tanned leather jerkin with iron studs across chest and back. Side lacing and three front buckles; hip length with a split back for riding. Under 2 kg, comfortable on all-day woodland campaigns.", ["ranger", "rogue", "leather"], "fd282cd6010071f45fb77df888f52a00e736d44b8419cb9452492bda3a3ae358"),
     _p("armor-elven-scale", "Elven Scale Corset", "armor", 88, "women", "gold", "light", "epic", "Sylvian Loom", "Gold-tone scales on green leather",
-       "Fitted scale corset with lace-up front. Elegant and battle-ready.", ["elf", "warrior", "scale"], "5a7f7f404c58c2307c8ed6d82502fb302f35aca72cab30ad6e3471aa671979a3"),
+       "Fitted corset of 600 hand-laced gold-tone aluminum scales on green leather. Lace-up front with steel boning; covers bust to hip line. About 1.8 kg, elegant enough for court and sturdy enough for battle scenes.", ["elf", "warrior", "scale"], "5a7f7f404c58c2307c8ed6d82502fb302f35aca72cab30ad6e3471aa671979a3"),
     _p("armor-chainmail", "Riveted Chainmail Hauberk", "armor", 129, "unisex", "silver", "neutral", "rare", "Ironcrest Armory", "Riveted steel rings",
-       "Short-sleeved hauberk, wear over a gambeson or tunic.", ["knight", "soldier", "mail"], "5c149033104422323011878afbb7b08ff499ab47d055832f61b849b973d8db3e"),
+       "Hand-riveted 9 mm round steel rings in a 4-in-1 weave. Short sleeves, mid-thigh length with split front and back for movement. About 9 kg; wear over a gambeson or padded tunic. Store dry and oiled.", ["knight", "soldier", "mail"], "5c149033104422323011878afbb7b08ff499ab47d055832f61b849b973d8db3e"),
     _p("cloak-shadow-ranger", "Shadow Ranger Cloak", "cloak", 42, "unisex", "black", "dark", "uncommon", "Woven Mist Outfitters", "Weatherproof wool blend",
        "Heavy hooded cloak with a forged iron clasp.", ["ranger", "rogue", "hood"], "95fe08c4e583763d7eb25c90a9ee6873a5f36af2001aa643b6929f59ad706db9"),
     _p("cloak-white-templar", "White Templar Mantle", "cloak", 47, "unisex", "white", "light", "uncommon", "Knights Hospitaller Depot", "Cotton canvas",
@@ -157,4 +158,93 @@ EXTRA_PRODUCTS = [
 for _item, _sizing in EXTRA_PRODUCTS:
     _item["sizing"] = _sizing
     _item["wearable"] = _item["category"] != "camping"
+    SEED_PRODUCTS.append(_item)
+
+
+# ---------- Catalog expansion (2026-11-20): clubs, gilded armor and more variety ----------
+GEN = "https://static.prod-images.emergentagent.com/jobs/51bae549-eb4a-4f2d-b831-163acad31b49/images/"
+MORE_PRODUCTS = [
+    (_p("weapon-oak-war-club", "Ironbound Oak War Club", "weapon", 49, "unisex", "brown", "neutral", "uncommon", "Fjordhammer Smithy", "Closed-cell foam, latex, fiberglass core",
+        "Knobbly oak-look club bound with three hammered iron bands and blunt studs. Leather grip with wrist thong. 75 cm, 900 g, LARP-safe.",
+        ["club", "barbarian", "ogre", "warrior"], GEN + "1869a0cf99c9c6ce99c5d796e36c8dbd35c707c81ccfaa0c386e0ad29a04ae42.jpeg"),
+     _s(["One size"], (ANY_H, ANY_W), 75, "Length 75 cm, 900 g")),
+    (_p("weapon-troll-club", "Rootwood Troll Club", "weapon", 64, "unisex", "green", "dark", "rare", "Safe Strike LARP", "Foam, latex, rope wrap",
+        "Oversized two-handed cudgel shaped from twisted roots, set with bone shards and a moss patina. 110 cm long but only 1.2 kg.",
+        ["club", "troll", "orc", "monster"], GEN + "348e66ba4b19550bb4b79c64da5a3cc66d9e3bc4cb074ba99631ea9b2284a3b4.jpeg"),
+     _s(["One size"], ((160, 210), (50, 160)), 110, "Length 110 cm, 1.2 kg", one_off=True, notes="Hand-sculpted, only one made")),
+    (_p("weapon-gilded-mace", "Sunforged Flanged Mace", "weapon", 72, "unisex", "gold", "light", "epic", "Ironcrest Armory", "Foam, latex, gold metallic finish, fiberglass core",
+        "Seven-flanged mace head in gleaming gold with engraved sun motifs, black leather haft and gold pommel. 65 cm, a paladin favourite.",
+        ["paladin", "cleric", "mace", "gold"], GEN + "7e2fa1a3c22df5e95c4f37f7b719ab8fc0b7971488636388145358e69213e656.jpeg"),
+     _s(["One size"], (ANY_H, ANY_W), 65, "Length 65 cm, 850 g")),
+    (_p("weapon-bearded-axe", "Bearded Viking Axe", "weapon", 58, "unisex", "black", "neutral", "rare", "Fjordhammer Smithy", "Foam, latex, fiberglass core",
+        "Bearded axe head etched with Norse knotwork on a long leather-wrapped haft. 80 cm with a coreless striking edge.",
+        ["viking", "axe", "barbarian"], GEN + "e9102fd1807fa4c2b3e925eff271a781f91c6a5ce8925b0b1accd3108ff185e0.jpeg"),
+     _s(["One size"], (ANY_H, ANY_W), 80, "Length 80 cm, 1 kg")),
+    (_p("weapon-ash-spear", "Ash Hunting Spear", "weapon", 69, "unisex", "brown", "neutral", "uncommon", "Sylvian Loom", "Foam tip, fiberglass shaft, leather",
+        "Leaf-shaped tip on a pale ash-look shaft with a leather grip and raven feather charm. 180 cm with a thrust-safe tip.",
+        ["ranger", "hunter", "spear", "elf"], GEN + "2bddc0d67ba39da60017b44671376c9c5b8368c4657316be9232863e2eaefd04.jpeg"),
+     _s(["One size"], ((155, 210), (40, 160)), 180, "Length 180 cm")),
+    (_p("armor-sunforged-breastplate", "Sunforged Gilded Breastplate", "armor", 189, "unisex", "gold", "light", "legendary", "Ironcrest Armory", "18-gauge steel, sealed gold-tone finish, brass rivets",
+        "Gilded breastplate with a raised sunburst at the sternum and rolled edges at neck and arms. Brass-riveted front and back plates close with two side buckles and padded shoulder straps; covers chest to navel. About 5.8 kg, sealed so it won't tarnish.",
+        ["paladin", "cleric", "royal", "gold", "plate"], GEN + "88bb942c8222221cf4266c29a05079baf30269b7285d6e7672c3988793af88e1.jpeg"),
+     _s(["M", "L"], ((165, 200), (60, 115)), 46, "Chest 94-114 cm", adjustable=True, notes="Side buckles adjust ~10 cm")),
+    (_p("armor-gold-lamellar", "Imperial Golden Lamellar", "armor", 165, "unisex", "gold", "light", "epic", "Jade Dragon Armoury", "Gold-tone aluminum plates, red silk lacing",
+        "Over 900 small gold-tone plates laced with red silk cord in overlapping rows. Hip-length coat with short sleeves and a split tasset skirt; hidden front ties. About 4.5 kg.",
+        ["samurai", "general", "imperial", "gold", "lamellar"], GEN + "cf39a305ae8d9c30720ba73973fb0db78782f87f7e0d94fa6e2a499b1ef9d3e1.jpeg"),
+     _s(["S", "M", "L", "XL"], ((155, 200), (50, 120)), 80, "Chest 88-120 cm", adjustable=True)),
+    (_p("armor-valkyrie-gold", "Valkyrie Gilded Scale Bodice", "armor", 132, "women", "gold", "light", "epic", "Shieldmaiden Forge", "Gold-tone steel scales, leather backing",
+        "Fitted bodice of hand-set gold-tone steel scales with winged pauldrons. Leather side lacing and adjustable shoulder straps; covers bust to waist. About 2.6 kg.",
+        ["valkyrie", "shieldmaiden", "viking", "gold", "scale"], GEN + "0c9572c93835f4c9550b7c2990931c882cb749d468785b3fb43afa3a627ee3c2.jpeg"),
+     _s(["XS", "S", "M"], ((150, 182), (45, 80)), 40, "Bust 78-96 cm", adjustable=True, notes="Side lacing")),
+    (_p("armor-lionheart-harness", "Lionheart Gilded Plate Harness", "armor", 249, "men", "gold", "light", "legendary", "Ironcrest Armory", "16-gauge steel, gold-tone finish, crimson wool trim",
+        "Gilded breastplate with layered lion-head pauldrons, crimson trim and articulated shoulder lames. Buckles at the sides and over the shoulders; covers chest, shoulders and upper arms. About 8.5 kg.",
+        ["knight", "king", "paladin", "gold", "plate"], GEN + "f04cddb611a2018b21b7a3f2aadb24b330fc0d2ab6803eea7cda695340f3a91b.jpeg"),
+     _s(["L", "XL"], ((175, 205), (75, 130)), 52, "Chest 104-124 cm", adjustable=True, one_off=True, notes="Show piece, only one forged")),
+    (_p("armor-orc-bonehide", "Bone-Plated Orc Hide Armor", "armor", 96, "unisex", "brown", "dark", "rare", "Glamour & Grime FX", "Faux hide and fur, resin bone plates, iron rings",
+        "Rough hide vest reinforced with carved resin bone plates and tusks across chest and shoulders. Rawhide side lacing and an open back panel for big frames. About 3 kg.",
+        ["orc", "barbarian", "monster", "tribal"], GEN + "d2033ad46bb15b5ada86affa54c4412f914c18ed0a91d0b87daad409f20abfb0.jpeg"),
+     _s(["L", "XL", "XXL"], ((165, 210), (70, 160)), 60, "Chest 100-140 cm", adjustable=True)),
+    (_p("armor-leather-lamellar", "Ranger Leather Lamellar Vest", "armor", 108, "unisex", "brown", "neutral", "rare", "Old Oak Tanner", "Hardened veg-tan leather plates, waxed cord, brass buckles",
+        "Rows of hardened leather plates laced with waxed cord into a flexible vest. High collar and three brass side buckles; covers chest, back and kidneys. About 2.4 kg and quiet on the move.",
+        ["ranger", "rogue", "scout", "leather"], GEN + "da39e41cccccdeb366b02e1a5e2201e86f7250d8f4248d66eb6115f07f632d6e.jpeg"),
+     _s(["S", "M", "L", "XL"], ((155, 200), (50, 115)), 58, "Chest 86-118 cm", adjustable=True)),
+    (_p("helm-gold-greathelm", "Gilded Crusader Great Helm", "helmet", 118, "unisex", "gold", "light", "epic", "Knights Hospitaller Depot", "14-gauge steel, gold-tone finish, padded liner",
+        "Flat-topped great helm with a cross-shaped breathing pattern and a small crown ridge. Padded liner and chin strap.",
+        ["crusader", "paladin", "knight", "gold"], GEN + "a641be7cedde472880dc7044fe35a93053f3f3ae8fc6c850f7505e1c2089be4a.jpeg"),
+     _s(["M", "L"], ((160, 205), (50, 140)), 34, "Head circ. 57-62 cm", adjustable=True)),
+    (_p("helm-beast-skull", "Antlered Beast Skull Mask", "helmet", 62, "unisex", "white", "dark", "rare", "Moonhollow Coven", "Cast resin, leather harness",
+        "Ivory beast skull mask with small antlers on an adjustable leather harness. Wide eye sockets keep your view clear.",
+        ["shaman", "druid", "necromancer", "skull"], GEN + "37214111f373450c11813cb08217c070f936bb380e9675d6edb78ff587ad9868.jpeg"),
+     _s(["One size"], (ANY_H, ANY_W), 40, "Head circ. 54-62 cm", adjustable=True)),
+    (_p("shield-gilded-sun", "Gilded Sunburst Heater Shield", "shield", 74, "unisex", "gold", "light", "rare", "Knights Hospitaller Depot", "Foam-edged birch ply, gold leaf paint",
+        "Heater shield with a gold sunburst on crimson and a gilded rim. Adjustable arm straps.",
+        ["paladin", "knight", "gold", "heraldry"], GEN + "78ab2feb870c52a8cdf504fe1e1a0b448944ff6b5befeec64be4d3728d8018af.jpeg"),
+     _s(["One size"], (ANY_H, ANY_W), 70, "70 x 50 cm, 2.3 kg")),
+    (_p("boots-gilded-greaves", "Gilded Greaves & Sabatons", "boots", 138, "unisex", "gold", "light", "epic", "Ironcrest Armory", "Steel, gold-tone engraving, leather straps",
+        "Articulated greaves with knee cops and pointed sabatons, engraved with scroll borders.",
+        ["paladin", "knight", "gold", "plate"], GEN + "952f46a2c6e7922828fdb4fb5929230018b0621bd7015338e379a6543a7e2826.jpeg"),
+     _s(["M", "L"], ((165, 200), (55, 125)), 56, "Calf 34-42 cm, EU 41-45", adjustable=True)),
+    (_p("cloak-druid-moss", "Mossweave Druid Cloak", "cloak", 68, "unisex", "green", "light", "rare", "Woven Mist Outfitters", "Felted wool, antler toggle",
+        "Hooded cloak of layered felted wool with leaf-cut edges and a carved antler clasp.",
+        ["druid", "elf", "ranger", "hood"], GEN + "c42e669e938384f25bb18efcd70815875a3018b42538710acd46ae63d8e43ed1.jpeg"),
+     _s(["One size"], ((150, 200), (40, 140)), 130, "Shoulder clasp, fits most", adjustable=True)),
+    (_p("tunic-monk-habit", "Brother's Wool Habit", "tunic", 54, "unisex", "brown", "neutral", "uncommon", "Cobblestone Crafts", "Brushed wool, rope cord",
+        "Deep-hooded monk habit with a rope cord belt and small wooden cross.",
+        ["monk", "cleric", "priest", "robe"], GEN + "d538664075ec9c18f3a3e5dea39c5eb690d692eff94e6a5420f32c017e40e4c0.jpeg"),
+     _s(["M", "L", "XL"], ((160, 205), (55, 140)), 150, "Chest 100-130 cm")),
+    (_p("tunic-corsair-coat", "Corsair Captain's Coat", "tunic", 98, "unisex", "red", "dark", "rare", "House Valemont Tailors", "Burgundy wool, gold brocade, brass buttons",
+        "Long frock coat with gold brocade cuffs, wide lapels and brass buttons.",
+        ["pirate", "captain", "noble", "coat"], GEN + "ed98bf8f6c6de3831dd5e913593c898ad7d9bb784d0486d903e97504260aefb1.jpeg"),
+     _s(["S", "M", "L", "XL"], ((155, 200), (50, 120)), 105, "Chest 88-120 cm")),
+    (_p("acc-alchemist-bandolier", "Alchemist's Potion Bandolier", "accessory", 44, "unisex", "brown", "neutral", "uncommon", "Moonhollow Coven", "Leather, glass vials, brass",
+        "Shoulder bandolier holding six corked potion vials and a small pouch.",
+        ["alchemist", "mage", "merchant", "potions"], GEN + "1e365d95c79044b941518462e03b542dd1b624d72b2c30388742fb5cab093bc0.jpeg"),
+     _s(["One size"], ((145, 205), (40, 150)), 130, "Fits chest 85-130 cm", adjustable=True)),
+    (_p("mk-gold-shimmer", "Gilded Shimmer Paint Kit", "makeup", 36, "unisex", "gold", "light", "uncommon", "Glamour & Grime FX", "Metallic cream paint, gold leaf flakes",
+        "Metallic gold cream paint, gold leaf flakes and a flat brush for divine or royal looks.",
+        ["royal", "divine", "gold", "paint"], GEN + "2f45758f4164463032354a8de5996783236a700a744d4a888201f1cef784ff31.jpeg"), ONE),
+]
+for _item, _sizing in MORE_PRODUCTS:
+    _item["sizing"] = _sizing
+    _item["wearable"] = True
     SEED_PRODUCTS.append(_item)
