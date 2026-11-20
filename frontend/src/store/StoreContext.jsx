@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { useAuth } from "@clerk/react";
+import { useAppAuth as useAuth } from "../components/auth/AppAuth";
 
 export const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const Ctx = createContext(null);

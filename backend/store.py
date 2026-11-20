@@ -5,6 +5,7 @@ import os
 import re
 import uuid
 from datetime import date, datetime, timezone
+from urllib.parse import urlparse
 
 import stripe
 from emergentintegrations.llm.chat import LlmChat, UserMessage
@@ -34,6 +35,7 @@ async def init(db):
     _db = db
     for coll, models in INDEXES.items():
         await db[coll].create_indexes(models)
+    await seed_events_if_empty()
 
 
 def now_iso():
@@ -50,8 +52,15 @@ def current_user(request: Request) -> dict:
     return {"user_id": f"guest_{gid}", "guest": True}
 
 
+def signed_user(request: Request) -> dict:
+    """Signed-in Clerk user; falls back to the guest id while Clerk keys are not set up."""
+    if os.environ.get("CLERK_PUBLISHABLE_KEY") and os.environ.get("CLERK_SECRET_KEY"):
+        return require_user(request)
+    return current_user(request)
+
+
 Uid = Depends(current_user)
-Signed = Depends(require_user)
+Signed = Depends(signed_user)
 
 
 # ---------- Cart ----------
@@ -112,7 +121,7 @@ async def add_to_cart(body: CartIn, user: dict = Uid):
 @router.post("/guest/merge")
 async def merge_guest(request: Request, user: dict = Signed):
     gid = request.headers.get("x-guest-id", "").lower()
-    if not GUEST_RE.match(gid):
+    if user.get("guest") or not GUEST_RE.match(gid):
         return {"merged": False}
     guest = await _get_cart(f"guest_{gid}")
     if guest:
@@ -213,54 +222,123 @@ async def orders(user: dict = Signed):
     docs = await _db.payment_transactions.find({"user_id": user["user_id"], "payment_status": "paid"}, {"_id": 0}).sort("created_at", -1).to_list(100)
     products = await _products({i["product_id"] for d in docs for i in d["items"]})
     for d in docs:
-        d["items"] = [{**i, "name": products.get(i["product_id"], {}).get("name", i["product_id"]),
+        d["items"] = [{**i, "name": products.get(i["product_id"], {}).get("name", i["product_id"]), "name_fr": products.get(i["product_id"], {}).get("name_fr", ""),
                        "image": products.get(i["product_id"], {}).get("image", "")} for i in d["items"]]
     return docs
 
 
-# ---------- Events (AI web search, Montreal area) ----------
-EVENT_FIELDS = ("name", "start_date", "end_date", "dates_text", "recurrence", "age_range", "location",
-                "distance_km", "drive_time", "genre", "description", "url")
+# ---------- Events (AI web search, Montreal area, bilingual) ----------
+TEXT_FIELDS = ("dates_text", "recurrence", "age_range", "genre", "description")
+EVENT_FIELDS = ("name", "start_date", "end_date", "location", "drive_time", "url",
+                *(f"{f}_{lang}" for f in TEXT_FIELDS for lang in ("en", "fr")))
 EVENT_PROMPT = (
-    "Search the web in French and English for upcoming LARP events (jeux de rôle grandeur nature, GN) in Quebec, Canada, "
-    "within about a 4-hour drive of Montreal. Exclude Ontario and the USA. Try: 'GN Québec 2026', 'Bicolline', "
-    "'Terres de Bélénos', 'LARP Quebec', 'grandeur nature médiéval fantastique'. "
-    "Today is {today}. Only include events with a confirmed date on or after today. One entry per event series. "
-    'Return ONLY a JSON array (max 12) of objects: {{"name": str, "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD", '
-    '"dates_text": str (next occurrence, with times if known), "recurrence": str (other upcoming dates or pattern, empty if one-off), '
-    '"age_range": str (e.g. "16+", empty if unknown), "location": str (town, region), "distance_km": int (from Montreal), '
-    '"drive_time": str like "2h15", "genre": str, "description": str (max 30 words), "url": str (official site)}}. '
-    "Only include real events found in search results."
+    "Search the web in both French and English for upcoming or recurring LARP events (jeux de rôle grandeur nature, GN) held in "
+    "the province of Quebec, Canada, within about a 4-hour drive of Montreal (Laurentides, Lanaudière, Estrie/Eastern Townships, "
+    "Mauricie, Montérégie, Outaouais, Québec City, Centre-du-Québec). Exclude Ontario and the USA. "
+    "Try: 'GN Québec 2026', 'grandeur nature médiéval fantastique Québec', 'Bicolline', 'Terres de Bélénos', 'LARP Quebec', "
+    "'GN Québec 2027'. Check each organizer site for its announced calendar. "
+    "Today is {today}. Only include events with a confirmed date on or after today; skip anything with no announced future date. "
+    "Never mention past dates or past editions. One entry per event series: put its other dates in recurrence. "
+    "Return ONLY a JSON array (no prose) of up to 15 objects: "
+    '{{"name": str (official name, no dates), "start_date": "YYYY-MM-DD" (next occurrence), "end_date": "YYYY-MM-DD", '
+    '"dates_text_en": str (next occurrence with times if known), "dates_text_fr": str (same in French), '
+    '"recurrence_en": str (other UPCOMING dates or pattern, empty if one-off), "recurrence_fr": str, '
+    '"age_range_en": str (minimum age or minors policy from the organizer rules, e.g. "16+"; empty if not stated), "age_range_fr": str, '
+    '"location": str (town, region), "distance_km": int (driving km from Montreal), "drive_time": str like "2h15", '
+    '"genre_en": str (genre and tone, no age info), "genre_fr": str, "description_en": str (max 30 words), "description_fr": str (max 30 words), '
+    '"url": str (official organizer site)}}. Only include real events found in search results.'
 )
 refresh_state = {"running": False, "error": False}
+_llm_lock = asyncio.Lock()  # the shared key allows one concurrent request; retry when busy
+
+
+async def _with_retry(fn):
+    for attempt in range(4):
+        async with _llm_lock:
+            try:
+                return await fn()
+            except Exception as exc:
+                busy = "429" in str(exc) or "concurrent" in str(exc).lower() or "rate" in str(exc).lower()
+                if not busy or attempt == 3:
+                    raise
+        await asyncio.sleep(3 * (attempt + 1))
+
+
+def _json_array(text: str) -> list:
+    start, end = text.find("["), text.rfind("]")
+    if start == -1 or end == -1:
+        raise ValueError("No JSON array in the search result")
+    found = json.loads(text[start:end + 1])
+    return found if isinstance(found, list) else []
 
 
 async def _search_events():
-    chat = LlmChat(api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"events-{uuid.uuid4()}",
-                   system_message="You are a meticulous research assistant for the Quebec LARP scene.")
-    chat.with_model("anthropic", "claude-sonnet-5-5").with_tools([{"type": "web_search_20250305", "name": "web_search", "max_uses": 10}])
-    resp = await chat.send_message_with_tools(UserMessage(text=EVENT_PROMPT.format(today=date.today().isoformat())))
-    text = resp.content or ""
-    start, end = text.find("["), text.rfind("]")
-    found = json.loads(text[start:end + 1]) if start != -1 and end != -1 else []
+    async def call():
+        chat = LlmChat(api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"events-{uuid.uuid4()}",
+                       system_message="You are a meticulous research assistant for the Quebec LARP (GN, grandeur nature) scene.")
+        chat.with_model("anthropic", "claude-sonnet-5-5").with_tools([{"type": "web_search_20250305", "name": "web_search", "max_uses": 12}])
+        resp = await chat.send_message_with_tools(UserMessage(text=EVENT_PROMPT.format(today=date.today().isoformat())))
+        return _json_array(resp.content or "")
+    found = await _with_retry(call)
     return [e for e in found if isinstance(e, dict) and e.get("name") and e.get("start_date")]
+
+
+def _host(url: str) -> str:
+    return urlparse(url or "").netloc.lower().removeprefix("www.")
+
+
+async def refresh_events() -> int:
+    found = await _search_events()
+    checked = now_iso()
+    for e in found:
+        doc = {k: str(e.get(k) or "") for k in EVENT_FIELDS}
+        for f in TEXT_FIELDS:  # legacy single-language field, kept for older clients
+            doc[f] = doc[f"{f}_en"] or doc[f"{f}_fr"]
+        doc["distance_km"] = int(_safe_int(e.get("distance_km")))
+        key = re.sub(r"[^a-z0-9]", "", doc["name"].lower())
+        await _db.events.update_one({"key": key}, {"$set": {**doc, "last_checked": checked},
+                                                   "$setOnInsert": {"key": key, "id": str(uuid.uuid4())}}, upsert=True)
+    if found:  # drop past events and older duplicates of a series that was just refreshed
+        today = date.today().isoformat()
+        hosts = {_host(e.get("url")) for e in found if e.get("url")}
+        async for old in _db.events.find({"last_checked": {"$ne": checked}}, {"_id": 0, "key": 1, "url": 1, "start_date": 1, "end_date": 1}):
+            past = max(old.get("start_date") or "", old.get("end_date") or "") < today
+            if past or (_host(old.get("url")) in hosts):
+                await _db.events.delete_one({"key": old["key"]})
+    return len(found)
+
+
+def _safe_int(value) -> int:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return 0
 
 
 async def _refresh_job():
     try:
-        checked = now_iso()
-        for e in await _search_events():
-            doc = {k: e.get(k) or "" for k in EVENT_FIELDS}
-            doc["distance_km"] = int(e.get("distance_km") or 0)
-            key = re.sub(r"[^a-z0-9]", "", doc["name"].lower())
-            await _db.events.update_one({"key": key}, {"$set": {**doc, "last_checked": checked},
-                                                       "$setOnInsert": {"key": key, "id": str(uuid.uuid4())}}, upsert=True)
-        refresh_state["error"] = False
+        count = await refresh_events()
+        refresh_state["error"] = count == 0
+        if count == 0:
+            logger.warning("event refresh found no events")
     except Exception as exc:
         logger.error("event refresh failed: %s", exc)
         refresh_state["error"] = True
     finally:
         refresh_state["running"] = False
+
+
+def start_refresh() -> dict:
+    if not refresh_state["running"]:
+        refresh_state["running"] = True
+        asyncio.create_task(_refresh_job())
+    return refresh_state
+
+
+async def seed_events_if_empty():
+    """First boot: search once so the events page is never empty."""
+    if await _db.events.count_documents({}) == 0:
+        start_refresh()
 
 
 @router.get("/events")
@@ -271,11 +349,8 @@ async def list_events():
 
 
 @router.post("/events/refresh")
-async def refresh_events(user: dict = Uid):
-    if not refresh_state["running"]:
-        refresh_state["running"] = True
-        asyncio.create_task(_refresh_job())
-    return refresh_state
+async def refresh_events_route(user: dict = Uid):
+    return start_refresh()
 
 
 @router.get("/events/refresh")

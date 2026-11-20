@@ -36,6 +36,19 @@
 .fr-card-highlight { outline: 2px dashed #000; outline-offset: -2px; }
 
 .fr-mirror-sigil { display: flex; align-items: center; justify-content: center; width: 5rem; height: 5rem; border: 1px solid #000; }
+/* Empty mirror: sized by its 4:5 frame, so it can shrink to fit narrow columns and long (French) labels. */
+.fr-mirror-empty { container-type: size; }
+.fr-mirror-empty .fr-btn-primary, .fr-mirror-empty .fr-btn-ghost {
+  height: auto; min-height: 2.5rem; padding: 0.5rem 0.75rem; white-space: normal; line-height: 1.15; text-align: center;
+}
+@container (max-height: 400px) {
+  .fr-mirror-empty .fr-mirror-sigil { width: 3.25rem; height: 3.25rem; }
+  .fr-mirror-empty .fr-mirror-sigil svg { width: 1.5rem; height: 1.5rem; }
+  .fr-mirror-empty .fr-btn-primary, .fr-mirror-empty .fr-btn-ghost { min-height: 2.25rem; font-size: 0.72rem; }
+}
+@container (max-width: 300px) {
+  .fr-mirror-empty .fr-btn-primary, .fr-mirror-empty .fr-btn-ghost { font-size: 0.7rem; letter-spacing: 0; }
+}
 .fr-rune { width: 56px; height: 56px; border-radius: 999px; border: 2px solid #e2e2e2; border-top-color: #000; animation: fr-spin 0.9s linear infinite; }
 .fr-dot { width: 7px; height: 7px; border-radius: 999px; background: #000; animation: fr-bounce 1s ease-in-out infinite; }
 .fr-pulse { animation: fr-glow 1.8s ease-in-out infinite; }

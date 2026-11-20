@@ -14,11 +14,13 @@ import { ItemDrawer } from "./ItemDrawer";
 import { StylistChat } from "./StylistChat";
 import { ProfileDialog } from "./ProfileDialog";
 import "./fitting-room.css";
+import { useI18n } from "../../i18n";
 
 const scrollToId = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
 export default function VirtualFittingRoom({ apiBase = process.env.REACT_APP_BACKEND_URL, onCheckout, initialItemId, initialLook }) {
   const api = useMemo(() => createApi(apiBase), [apiBase]);
+  const { t, lang } = useI18n();
   const [profile, setProfile] = useState(null);
   const [styleNote, setStyleNote] = useState("");
   const [highlight, setHighlight] = useState([]);
@@ -28,9 +30,9 @@ export default function VirtualFittingRoom({ apiBase = process.env.REACT_APP_BAC
 
   const catalog = useCatalog(api, profile);
   const ctxRef = useRef({});
-  ctxRef.current = { filters: catalog.filters, style_note: styleNote, profile };
+  ctxRef.current = { filters: catalog.filters, style_note: styleNote, profile, lang };
   const outfit = useOutfit();
-  const tryOn = useTryOn(api, outfit.equipped, styleNote);
+  const tryOn = useTryOn(api, outfit.equipped, styleNote, { needSelfie: t("tryon.needSelfie"), failed: t("tryon.failed") });
   const { equipped, bench } = outfit;
 
   const applyAssistant = (res) => {
@@ -44,20 +46,20 @@ export default function VirtualFittingRoom({ apiBase = process.env.REACT_APP_BAC
       ctxRef.current.style_note = res.style_note;
       setStyleNote(res.style_note);
     }
-    if (!tryOn.selfieRef.current && res.equip.length) toast("Add a selfie to see these on you");
+    if (!tryOn.selfieRef.current && res.equip.length) toast(t("fr.addSelfieToast"));
   };
 
   const stylist = useStylist(api, () => ({
     ...ctxRef.current,
     equipped_ids: Object.values(outfit.ref.current.equipped).map((i) => i.id), benched_ids: Object.keys(outfit.ref.current.bench),
-  }), applyAssistant);
+  }), applyAssistant, t("chat.away"));
 
   const handleSelfie = async (dataUrl) => {
     try {
       setPendingSelfie(await downscale(dataUrl));
       setProfileOpen(true);
     } catch {
-      toast.error("That file isn't a readable image. Try a JPG or PNG.");
+      toast.error(t("fr.badImage"));
     }
   };
 
@@ -66,10 +68,10 @@ export default function VirtualFittingRoom({ apiBase = process.env.REACT_APP_BAC
     tryOn.setProfile(p);
     setProfileOpen(false);
     catalog.setFilters((f) => ({ ...f, gender: p.gender === "other" ? null : p.gender }));
-    if (!pendingSelfie) return toast.success("Measurements updated");
+    if (!pendingSelfie) return toast.success(t("fr.measurementsUpdated"));
     tryOn.setSelfie(pendingSelfie);
     setPendingSelfie(null);
-    toast.success("Your model is ready.");
+    toast.success(t("fr.modelReady"));
   };
 
   const pickLook = (look) => {
@@ -78,7 +80,7 @@ export default function VirtualFittingRoom({ apiBase = process.env.REACT_APP_BAC
     tryOn.showLook(look);
   };
 
-  const checkout = (items) => (onCheckout ? onCheckout(items) : toast.success(`${items.length} items ready for checkout (marketplace cart not connected yet)`));
+  const checkout = (items) => (onCheckout ? onCheckout(items) : toast.success(t("fr.checkoutPlaceholder", { n: items.length })));
   const selfie = tryOn.selfie;
   const started = useRef(false);
   useEffect(() => {
@@ -86,14 +88,19 @@ export default function VirtualFittingRoom({ apiBase = process.env.REACT_APP_BAC
     started.current = true;
     const item = initialItemId && catalog.byId[initialItemId];
     if (item) { outfit.toggle(item); setDrawerItem(item); }
-    if (initialLook) { stylist.send(`Build me a full ${initialLook.toLowerCase()} look`); scrollToId("stylist"); }
-  }, [catalog.byId, initialItemId, initialLook, outfit, stylist]);
+    if (initialLook) {
+      const key = `look.${initialLook.toLowerCase()}`;
+      const look = t(key) === key ? initialLook : t(key);
+      stylist.send(t("fr.lookRequest", { look: look.toLowerCase() }));
+      scrollToId("stylist");
+    }
+  }, [catalog.byId, initialItemId, initialLook, outfit, stylist, t]);
 
   return (
     <div className="fr-root min-h-screen" data-testid="virtual-fitting-room">
       <div id="fitting-room" className="scroll-mt-28 border-b border-black px-4 py-6 sm:px-8">
-        <h2 className="text-3xl font-extrabold uppercase sm:text-4xl">Fitting room</h2>
-        <p className="mt-1 text-xs font-semibold uppercase text-[#555555]" data-testid="header-selfie-status">{selfie ? "Model ready · every piece shown is a real listing" : "Add a selfie to try gear on yourself"}</p>
+        <h2 className="text-3xl font-extrabold uppercase sm:text-4xl">{t("fr.title")}</h2>
+        <p className="mt-1 text-xs font-semibold uppercase text-[#555555]" data-testid="header-selfie-status">{selfie ? t("fr.statusReady") : t("fr.statusEmpty")}</p>
       </div>
       <main className="mx-auto grid max-w-[1600px] grid-cols-12 gap-6 px-4 py-6 sm:px-8">
         <div className="col-span-12 flex flex-col gap-5 md:col-span-6 lg:col-span-4 xl:col-span-3">
@@ -104,8 +111,8 @@ export default function VirtualFittingRoom({ apiBase = process.env.REACT_APP_BAC
         </div>
         <section id="catalog" className="scroll-mt-28 col-span-12 md:col-span-6 lg:col-span-8 xl:col-span-6" data-testid="catalog-section">
           <div className="mb-5 flex items-baseline justify-between">
-            <h2 className="text-2xl font-extrabold uppercase sm:text-3xl">It may interest you</h2>
-            <span className="text-xs text-[#666666]" data-testid="catalog-count">{catalog.products.length} items</span>
+            <h2 className="text-2xl font-extrabold uppercase sm:text-3xl">{t("fr.mayInterest")}</h2>
+            <span className="text-xs text-[#666666]" data-testid="catalog-count">{t("fr.items", { n: catalog.products.length })}</span>
           </div>
           <CatalogFilters profile={profile} fitOnly={catalog.fitOnly} setFitOnly={catalog.setFitOnly} filters={catalog.filters} setFilters={catalog.setFilters} facets={catalog.facets}>
             <OutfitList equipped={equipped} bench={bench} profile={profile} onOpen={setDrawerItem} onToggle={outfit.toggle} onRemove={outfit.remove} />

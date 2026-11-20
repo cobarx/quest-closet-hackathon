@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
+import { useI18n } from "../../i18n";
 
 export const CameraDialog = ({ open, onOpenChange, onCapture }) => {
   const videoRef = useRef(null);
   const [error, setError] = useState("");
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!open) return;
@@ -16,7 +18,7 @@ export const CameraDialog = ({ open, onOpenChange, onCapture }) => {
         stream = s;
         if (videoRef.current) videoRef.current.srcObject = s;
       })
-      .catch(() => setError("Camera unavailable. Allow camera access or upload a photo instead."));
+      .catch(() => setError("camera.unavailable"));
     return () => stream?.getTracks().forEach((t) => t.stop());
   }, [open]);
 
@@ -37,10 +39,10 @@ export const CameraDialog = ({ open, onOpenChange, onCapture }) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="fr-panel max-w-xl border-[#8f8f8f] bg-[#ffffff] text-[#000000]" data-testid="camera-dialog">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl">Strike a pose</DialogTitle>
+          <DialogTitle className="font-display text-xl">{t("camera.pose")}</DialogTitle>
         </DialogHeader>
         {error ? (
-          <p className="text-sm text-[#d0021b]" data-testid="camera-error">{error}</p>
+          <p className="text-sm text-[#d0021b]" data-testid="camera-error">{t(error)}</p>
         ) : (
           <div className="relative overflow-hidden rounded-none border border-[#8f8f8f]">
             <video ref={videoRef} autoPlay playsInline muted className="aspect-[4/3] w-full -scale-x-100 bg-black object-cover" data-testid="camera-video" />
@@ -48,7 +50,7 @@ export const CameraDialog = ({ open, onOpenChange, onCapture }) => {
           </div>
         )}
         <button onClick={capture} disabled={!!error} className="fr-btn-primary w-full" data-testid="camera-capture-button">
-          <Camera className="h-4 w-4" /> Capture selfie
+          <Camera className="h-4 w-4" /> {t("camera.capture")}
         </button>
       </DialogContent>
     </Dialog>

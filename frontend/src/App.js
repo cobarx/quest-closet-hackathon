@@ -2,9 +2,10 @@ import "@/App.css";
 import "./features/fitting-room/fitting-room.css";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { Show, SignIn, SignUp } from "@clerk/react";
 import { Toaster } from "./components/ui/sonner";
 import ClerkAuthProvider from "./components/auth/ClerkAuthProvider";
+import { AppSignIn, AppSignUp, AuthShow } from "./components/auth/AppAuth";
+import { LangProvider } from "./i18n";
 import { StoreProvider } from "./store/StoreContext";
 import { StoreFooter, StoreHeader } from "./store/StoreHeader";
 import { CartDrawer } from "./store/CartDrawer";
@@ -17,8 +18,8 @@ import { OrdersPage, PaymentCancel, PaymentSuccess } from "./pages/Commerce";
 
 const RequireSignIn = () => (
   <>
-    <Show when="signed-in"><Outlet /></Show>
-    <Show when="signed-out"><Navigate to="/sign-in" replace /></Show>
+    <AuthShow when="signed-in" guestShows><Outlet /></AuthShow>
+    <AuthShow when="signed-out" guestShows={false}><Navigate to="/sign-in" replace /></AuthShow>
   </>
 );
 
@@ -40,6 +41,7 @@ const Layout = () => {
 function App() {
   return (
     <div className="App">
+      <LangProvider>
       <BrowserRouter>
         <ClerkAuthProvider>
           <StoreProvider>
@@ -51,8 +53,8 @@ function App() {
                 <Route path="/product/:id" element={<ProductPage />} />
                 <Route path="/fitting-room" element={<FittingRoomPage />} />
                 <Route path="/events" element={<EventsPage />} />
-                <Route path="/sign-in/*" element={<AuthPage><SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" withSignUp /></AuthPage>} />
-                <Route path="/sign-up/*" element={<AuthPage><SignUp routing="path" path="/sign-up" signInUrl="/sign-in" /></AuthPage>} />
+                <Route path="/sign-in/*" element={<AuthPage><AppSignIn routing="path" path="/sign-in" signUpUrl="/sign-up" withSignUp /></AuthPage>} />
+                <Route path="/sign-up/*" element={<AuthPage><AppSignUp routing="path" path="/sign-up" signInUrl="/sign-in" /></AuthPage>} />
                 <Route element={<RequireSignIn />}>
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/payment/success" element={<PaymentSuccess />} />
@@ -64,6 +66,7 @@ function App() {
           </StoreProvider>
         </ClerkAuthProvider>
       </BrowserRouter>
+      </LangProvider>
       <Toaster theme="light" position="bottom-center" />
     </div>
   );
