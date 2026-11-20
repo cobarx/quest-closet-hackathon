@@ -1,22 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClerkProvider } from "@clerk/react";
-import { dark } from "@clerk/ui/themes";
 
-// Brand Clerk here once: it styles sign-in, sign-up and the user menu.
 const appearance = {
-  theme: dark,
-  captcha: { theme: "dark" },
   variables: {
-    colorPrimary: "#F59E0B",
-    colorPrimaryForeground: "#0C0A09",
-    colorBackground: "#1C1917",
-    colorForeground: "#F5F5F4",
-    colorInput: "#292524",
-    colorInputForeground: "#F5F5F4",
-    colorBorder: "#44403C",
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-    borderRadius: "0.5rem",
+    colorPrimary: "#000000", colorPrimaryForeground: "#ffffff", colorBackground: "#ffffff",
+    colorForeground: "#000000", colorBorder: "#000000", borderRadius: "0px", fontFamily: "Archivo, Arial, sans-serif",
   },
 };
 

@@ -1,132 +1,245 @@
 {
-  "project_name": "Valdor Outfitter - LARP Gear & Quebec Adventurer Hub",
-  "archetype": "Adventurer's Outfitter (Atmospheric Dark, Parchment, Leather & Ember)",
+  "theme": "Dark Fantasy / Neo-Medieval Alchemical Atelier",
+  "archetype": "ARCHETYPE 5: LUXURY & DARK FANTASY (Gothic atmospheric, antique brass, oxidized iron, aged parchment)",
   "color_palette": {
-    "background_deep": "#0C0A09",
-    "surface_leather": "#1C1917",
-    "surface_parchment_tint": "#292524",
-    "border_leather": "#44403C",
-    "border_ember": "#D97706",
-    "accent_ember": "#F59E0B",
-    "accent_ember_glow": "#B45309",
-    "text_parchment": "#F5F5F4",
-    "text_muted_leather": "#A8A29E",
-    "success_nature": "#10B981",
-    "badge_quebec_blue": "#1E40AF"
+    "background": "#0b0c10",
+    "background_secondary": "#13161c",
+    "surface": "#181b22",
+    "surface_elevated": "#222733",
+    "border_subtle": "#2e3444",
+    "border_accent": "#d4a359",
+    "primary_accent": "#c59a53",
+    "primary_accent_hover": "#e0b46d",
+    "secondary_accent": "#8b2635",
+    "text_primary": "#f3ede2",
+    "text_secondary": "#9fa6b2",
+    "text_muted": "#6b7280",
+    "success": "#34d399",
+    "rarity_colors": {
+      "common": "#94a3b8",
+      "uncommon": "#38bdf8",
+      "rare": "#a855f7",
+      "epic": "#f59e0b",
+      "legendary": "#ef4444"
+    }
   },
   "typography": {
-    "font_family_display": "'Cinzel', 'Playfair Display', serif",
-    "font_family_body": "'Plus Jakarta Sans', 'Inter', sans-serif",
-    "font_family_mono": "'JetBrains Mono', monospace",
-    "headings": {
-      "h1": "text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight font-serif text-amber-50",
-      "h2": "text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-normal font-serif text-amber-100",
-      "h3": "text-xl sm:text-2xl font-medium font-serif text-stone-200",
-      "body": "text-sm sm:text-base leading-relaxed text-stone-300 font-sans",
-      "eyebrow": "text-xs font-semibold uppercase tracking-[0.2em] text-amber-500/90"
+    "headline_font": "Cinzel, Cormorant Garamond, serif",
+    "subheading_font": "Outfit, General Sans, sans-serif",
+    "body_font": "IBM Plex Sans, -apple-system, sans-serif",
+    "mono_font": "JetBrains Mono, monospace",
+    "scale": {
+      "h1": "text-3xl sm:text-4xl lg:text-5xl font-serif tracking-tight font-bold",
+      "h2": "text-2xl sm:text-3xl font-serif tracking-tight font-semibold",
+      "h3": "text-xl sm:text-2xl font-serif font-medium",
+      "h4": "text-lg sm:text-xl font-sans font-semibold",
+      "body": "text-sm sm:text-base font-sans text-[#9fa6b2] leading-relaxed",
+      "eyebrow": "text-xs font-mono uppercase tracking-[0.2em] text-[#c59a53]"
     }
   },
-  "bilingual_support": {
-    "mode": "Client-side toggle (FR / EN)",
-    "rule": "Layouts must allow 25-30% expansion for French translations (e.g. 'Build Your Look' -> 'Forger votre costume', 'Character Interview' -> 'Entretien avec l\\'Oracle')."
-  },
-  "image_urls": {
-    "hero_warrior": {
-      "url": "https://images.pexels.com/photos/35248220/pexels-photo-35248220.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-      "description": "Medieval warrior in armor with sword, ideal for hero banner and preview header."
-    },
-    "hero_ranger": {
-      "url": "https://images.unsplash.com/photo-1686747517763-f9d694bda04d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwzfHxtZWRpZXZhbCUyMHdhcnJpb3IlMjBjb3N0dW1lJTIwbGFycHxlbnwwfHx8fDE3OTUyMDU0OTF8MA&ixlib=rb-4.1.0&q=85",
-      "description": "Knight on woodland trail, perfect for build-your-look background."
-    },
-    "hero_barbarian": {
-      "url": "https://images.pexels.com/photos/40452766/pexels-photo-40452766.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-      "description": "Costumed warrior in fur garb with double axes, great for Character Interview flow card."
-    },
-    "camping_lantern": {
-      "url": "https://images.unsplash.com/photo-1766773725488-1a56bb11f4b1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxjYW1waW5nJTIwZ2VhciUyMHRlbnQlMjBmb3Jlc3QlMjBsYW50ZXJufGVufDB8fHx8MTc5NTIwNTQ5MXww&ixlib=rb-4.1.0&q=85",
-      "description": "Hand holding lantern in deep forest, represents Camping Gear category."
-    },
-    "camping_camp": {
-      "url": "https://images.pexels.com/photos/12336791/pexels-photo-12336791.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-      "description": "Nighttime campsite tent with warm lantern glow."
-    },
-    "weapons_sword_scabbard": {
-      "url": "https://images.unsplash.com/photo-1774812855895-7f05397e6df2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHw0fHxmYW50YXN5JTIwc3dvcmQlMjBkYWdnZXIlMjBsZWF0aGVyJTIwYXJtb3J8ZW58MHx8fHwxNzk1MjA1NDkxfDA&ixlib=rb-4.1.0&q=85",
-      "description": "Ornate medieval sword hilt and leather scabbard, represents Weapons category."
-    },
-    "weapons_blade": {
-      "url": "https://images.unsplash.com/photo-1590505029111-371381f65018?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwzfHxmYW50YXN5JTIwc3dvcmQlMjBkYWdnZXIlMjBsZWF0aGVyJTIwYXJtb3J8ZW58MHx8fHwxNzk1MjA1NDkxfDA&ixlib=rb-4.1.0&q=85",
-      "description": "Engraved fantasy blade on rustic wood."
-    },
-    "leather_armor_gear": {
-      "url": "https://images.unsplash.com/photo-1600081523138-0bae23488dea?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwxfHxtZWRpZXZhbCUyMHdhcnJpb3IlMjBjb3N0dW1lJTIwbGFycHxlbnwwfHx8fDE3OTUyMDU0OTF8MA&ixlib=rb-4.1.0&q=85",
-      "description": "Riveted leather and chainmail harness texture for costumes category."
+  "layout_and_grids": {
+    "concept": "The Grand Armory Fitting Chamber (3-Column Asymmetric Atelier)",
+    "container": "w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6",
+    "header_nav": "Sticky frosted dark bar (bg-[#0b0c10]/90 backdrop-blur-md border-b border-[#2e3444]) with Armory Brand, Selfie Status badge, Quick Presets, and Outfit Cart Summary",
+    "desktop_columns": {
+      "left_col": "col-span-12 lg:col-span-4 flex flex-col gap-5 (Selfie capture webcam/upload + AI Fitting Mirror preview + Active Wardrobe Tray)",
+      "center_col": "col-span-12 lg:col-span-5 flex flex-col gap-5 (Catalog filters, search, tier tabs, and reactive responsive gear grid)",
+      "right_col": "col-span-12 lg:col-span-3 flex flex-col gap-5 (Interactive AI Stylist Companion 'Grimoire Assistant' + speech/mic trigger + outfit price total & embed integration drawer)"
     }
   },
-  "layout_and_navigation": {
-    "header": {
-      "style": "Sticky at z-50, backdrop-blur-xl bg-stone-950/85 border-b border-stone-800/80 px-4 py-3 sm:px-6",
-      "elements": [
-        "Brand Logo: 'Valdor Outfitter' with ember forge crest",
-        "Navigation links: Events (Montreal 3-4h), Shop (4 Cats), Build Look (Flow A), Character Oracle (Flow B)",
-        "Bilingual Switcher: FR / EN toggle button with subtle gold border",
-        "Cart Quick-Drawer Trigger with live count & price (CAD)",
-        "User Profile / Clerk Auth Badge"
-      ]
-    },
-    "two_flow_cards": {
-      "strategy": "Two prominent side-by-side cards on desktop, stacked on mobile with equal prominence (50/50 split).",
-      "card_a": {
-        "title_en": "Flow A: Forge Your Own Look",
-        "title_fr": "Voie A : Composez votre attirail",
-        "badge": "Interactive Studio",
-        "description": "Handpick individual armor, weapons, tent gear, and FX makeup with live CAD budget meter and selfie virtual try-on."
-      },
-      "card_b": {
-        "title_en": "Flow B: The Character Oracle",
-        "title_fr": "Voie B : L'Oracle de Personnage",
-        "badge": "AI Roleplay Interview",
-        "description": "Answer 4 questions about your LARP persona (clan, combat archetype, camping comfort, budget) to generate a full lore-accurate kit."
+  "key_features_and_modules": {
+    "module_1_selfie_fitting_mirror": {
+      "description": "Interactive webcam / photo upload panel that creates the user avatar and renders realistic AI try-on transformations with immersive realistic loading states (10-20s simulated progress with alchemical runes and generation phases)",
+      "test_ids": {
+        "webcam_button": "selfie-webcam-trigger",
+        "upload_input": "selfie-upload-input",
+        "preview_canvas": "virtual-tryon-preview-image",
+        "generate_button": "generate-tryon-button",
+        "loading_indicator": "tryon-loading-state"
       }
     },
-    "events_finder": {
-      "region": "Montreal & 3-4h Radius (Estrie, Laurentides, Lanaudière, Montérégie, Mauricie, Ottawa/Outaouais)",
-      "features": [
-        "AI Web Search refresh trigger with last-checked timestamp",
-        "Event metadata: Distance from Montreal (km & drive time), Rulebook/LARP System (Bicolline, Terres d'Arragon, etc.)",
-        "Direct link to official LARP organizer site",
-        "Filter by date, distance, and gear requirements"
-      ]
+    "module_2_larp_catalog": {
+      "description": "30+ authentic LARP items across Armor, Robes & Tunics, Weapons & Shields, Leatherwork & Boots, and Mystical Artifacts. Filterable by category, price slider, gender/cut, and rarity.",
+      "test_ids": {
+        "filter_category": "catalog-filter-category",
+        "filter_gender": "catalog-filter-gender",
+        "filter_price": "catalog-filter-price",
+        "search_input": "catalog-search-input",
+        "item_card_prefix": "catalog-item-card-",
+        "quick_equip_btn": "item-quick-equip-button"
+      }
     },
-    "onboarding_modal": {
-      "fields": [
-        "Quebec / Greater Montreal Residency Check (Checkbox)",
-        "City / Region selector (Montreal, Laval, Longueuil, Sherbrooke, Trois-Rivières, Gatineau, etc.)",
-        "Character Identity: Gender, Height (cm), Weight (kg) for gear sizing",
-        "Budget ceiling (CAD Slider $100 - $2,500)",
-        "Selfie photo upload for AI Virtual Fitting preview"
-      ]
+    "module_3_item_drawer": {
+      "description": "Deep lore modal/drawer inspecting item origin, artisan seller, material stats, dimensions, price in gold/USD, and 'Equip to Virtual Mirror' button.",
+      "test_ids": {
+        "drawer_container": "item-detail-drawer",
+        "drawer_close": "item-detail-drawer-close",
+        "drawer_equip_toggle": "item-detail-equip-toggle"
+      }
+    },
+    "module_4_ai_stylist_chat": {
+      "description": "Conversational AI Grimoire stylist with preset quick prompts ('Find stealthy rogue gear < $60', 'Equip dark knight armor', 'Lighter aesthetic warrior', 'Female paladin silver kit'), natural language understanding that filters items and auto-equips, plus SpeechRecognition mic toggle.",
+      "test_ids": {
+        "chat_input": "ai-stylist-input",
+        "chat_submit": "ai-stylist-send-button",
+        "chat_mic_button": "ai-stylist-mic-toggle",
+        "chat_messages_container": "ai-stylist-messages-list"
+      }
+    },
+    "module_5_wardrobe_tray": {
+      "description": "Equipped slot items bar (Head, Chest, Cloak, Legs, Weapon, Relic) with live price tally, one-click remove, and 'Summon Wardrobe Preview' action.",
+      "test_ids": {
+        "wardrobe_tray": "equipped-wardrobe-tray",
+        "clear_wardrobe_button": "clear-wardrobe-button",
+        "total_price_display": "wardrobe-total-price"
+      }
     }
   },
-  "data_test_ids": {
-    "lang_toggle": "language-toggle-btn",
-    "cart_drawer_trigger": "cart-drawer-trigger",
-    "onboarding_modal": "onboarding-dialog",
-    "onboarding_submit": "onboarding-save-btn",
-    "flow_a_cta": "flow-a-start-btn",
-    "flow_b_cta": "flow-b-start-btn",
-    "events_refresh": "events-ai-refresh-btn",
-    "selfie_upload_input": "selfie-file-input",
-    "generate_preview_btn": "generate-ai-preview-btn",
-    "checkout_btn": "stripe-checkout-btn"
+  "image_urls": {
+    "hero_and_previews": [
+      {
+        "category": "ai_preview_dark_knight",
+        "url": "https://images.pexels.com/photos/19249701/pexels-photo-19249701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Hooded warrior in dark steel armor with greatsword - for dark aesthetic model try-on"
+      },
+      {
+        "category": "ai_preview_paladin_female",
+        "url": "https://images.unsplash.com/photo-1686747513617-ccd391daa3e2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHxmYW50YXN5JTIwa25pZ2h0JTIwd2FycmlvciUyMGNvc3BsYXl8ZW58MHx8fHwxNzk1MjA3MjY1fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Woman warrior dressed in burnished plate armor holding a sword"
+      },
+      {
+        "category": "ai_preview_heavy_knight",
+        "url": "https://images.unsplash.com/photo-1680794086411-d7bd4a4e4742?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHw0fHxsYXJwJTIwbWVkaWV2YWwlMjBjb3N0dW1lJTIwYXJtb3J8ZW58MHx8fHwxNzk1MjA3MjY1fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Full suit of authentic plate armor and greatsword"
+      },
+      {
+        "category": "ai_preview_ranger_scout",
+        "url": "https://images.pexels.com/photos/39150758/pexels-photo-39150758.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Adventurer in woodland tunic, leather bracers, and river scout gear"
+      },
+      {
+        "category": "ai_preview_nomad_berserker",
+        "url": "https://images.pexels.com/photos/35248220/pexels-photo-35248220.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Medieval warrior in fur mantle and scale mail with arming sword"
+      }
+    ],
+    "catalog_items": [
+      {
+        "id": "item-1",
+        "name": "Barbuta Iron Visor Helmet",
+        "category": "helmets",
+        "price": 68,
+        "gender": "unisex",
+        "rarity": "rare",
+        "color": "black",
+        "image": "https://images.unsplash.com/photo-1680657437578-b514959cdb6e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwzfHxsYXJwJTIwbWVkaWV2YWwlMjBjb3N0dW1lJTIwYXJtb3J8ZW58MHx8fHwxNzk1MjA3MjY1fDA&ixlib=rb-4.1.0&q=85",
+        "seller": "Gallows & Forge Guild",
+        "description": "16-gauge cold rolled steel with authentic brass rivets and internal padded coif."
+      },
+      {
+        "id": "item-2",
+        "name": "Full Gothic Steel Cuirass",
+        "category": "armor",
+        "price": 145,
+        "gender": "unisex",
+        "rarity": "epic",
+        "color": "silver",
+        "image": "https://images.unsplash.com/photo-1681838063187-789279efc9bd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwxfHxsYXJwJTIwbWVkaWV2YWwlMjBjb3N0dW1lJTIwYXJtb3J8ZW58MHx8fHwxNzk1MjA3MjY1fDA&ixlib=rb-4.1.0&q=85",
+        "seller": "Ironcrest Armory",
+        "description": "Curved breastplate and backplate providing high mobility for heavy skirmishers."
+      },
+      {
+        "id": "item-3",
+        "name": "Shadow Ranger Cowled Cloak",
+        "category": "cloaks",
+        "price": 42,
+        "gender": "unisex",
+        "rarity": "uncommon",
+        "color": "dark",
+        "image": "https://images.unsplash.com/photo-1623611743104-0f1ad33063d5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHwzfHxtZWRpZXZhbCUyMGxlYXRoZXIlMjBib290cyUyMGNsb2FrJTIwYmVsdCUyMGxhcnB8ZW58MHx8fHwxNzk1MjA3MjcwfDA&ixlib=rb-4.1.0&q=85",
+        "seller": "Woven Mist Outfitters",
+        "description": "Heavy weatherproof wool blend with deep hood and forged iron pin clasp."
+      },
+      {
+        "id": "item-4",
+        "name": "Artisan Stitched Ring Belt",
+        "category": "accessories",
+        "price": 32,
+        "gender": "unisex",
+        "rarity": "common",
+        "color": "brown",
+        "image": "https://images.unsplash.com/photo-1718293515600-38d4c89bdc92?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHwxfHxtZWRpZXZhbCUyMGxlYXRoZXIlMjBib290cyUyMGNsb2FrJTIwYmVsdCUyMGxhcnB8ZW58MHx8fHwxNzk1MjA3MjcwfDA&ixlib=rb-4.1.0&q=85",
+        "seller": "Old Oak Tanner",
+        "description": "Top-grain veg-tan leather embossed with Nordic knotwork and forged brass ring."
+      },
+      {
+        "id": "item-5",
+        "name": "Wanderer's Folded Ankle Boots",
+        "category": "boots",
+        "price": 48,
+        "gender": "unisex",
+        "rarity": "common",
+        "color": "brown",
+        "image": "https://images.unsplash.com/photo-1635405030320-426028b2d192?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHwyfHxtZWRpZXZhbCUyMGxlYXRoZXIlMjBib290cyUyMGNsb2FrJTIwYmVsdCUyMGxhcnB8ZW58MHx8fHwxNzk1MjA3MjcwfDA&ixlib=rb-4.1.0&q=85",
+        "seller": "Cobblestone Crafts",
+        "description": "Flexible suede with reinforced rubberized sole for long woodland campaigns."
+      },
+      {
+        "id": "item-6",
+        "name": "Crusader Heraldic Kite Shield",
+        "category": "shields",
+        "price": 54,
+        "gender": "unisex",
+        "rarity": "rare",
+        "color": "white",
+        "image": "https://images.pexels.com/photos/13979555/pexels-photo-13979555.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "seller": "Knights Hospitaller Depot",
+        "description": "Curved birch plywood shield with canvas face and distressed battle cross insignia."
+      },
+      {
+        "id": "item-7",
+        "name": "Leather Pauldron Harness",
+        "category": "armor",
+        "price": 39,
+        "gender": "men",
+        "rarity": "uncommon",
+        "color": "black",
+        "image": "https://images.unsplash.com/photo-1734383524013-f22c4e2ed4b6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHw0fHxtZWRpZXZhbCUyMGxlYXRoZXIlMjBib290cyUyMGNsb2FrJTIwYmVsdCUyMGxhcnB8ZW58MHx8fHwxNzk1MjA3MjcwfDA&ixlib=rb-4.1.0&q=85",
+        "seller": "Shadowstep Leather",
+        "description": "Layered 8oz oiled leather shoulder guard with torso cross-strap."
+      },
+      {
+        "id": "item-8",
+        "name": "Elven Embroidered Tunic Dress",
+        "category": "tunics",
+        "price": 49,
+        "gender": "women",
+        "rarity": "rare",
+        "color": "green",
+        "image": "https://images.pexels.com/photos/39150768/pexels-photo-39150768.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "seller": "Sylvian Loom",
+        "description": "Breathable emerald linen with gold corded piping and flared woodland sleeves."
+      }
+    ]
   },
   "instructions_to_main_agent": [
-    "Use JavaScript (.js/.jsx) with Tailwind CSS and Radix/shadcn components. Do not generate TypeScript (.tsx) files.",
-    "Implement full bilingual toggling with an easy-to-read dictionary (fr/en) so every section supports Quebec francophone users and English participants.",
-    "Style surfaces with warm dark leathers (stone-900 to stone-950), ember borders (amber-500/30), parchment text (stone-200), and gold call-to-actions.",
-    "Never leave headers transparent. Keep sticky navigation legible over hero banners using backdrop-blur-xl bg-stone-950/85.",
-    "Add data-testid attributes to all major buttons, links, inputs, and interactive steps for robust automated verification.",
-    "Always provide realistic Montreal-radius LARP events (Duché de Bicolline in Saint-Mathieu-du-Parc, Terres de Bélénos, Terra Incognita, etc.) with verified-looking metadata and source links."
+    "Build this standalone LARP Virtual Mirror & AI Fitting Room feature in React JS with complete responsiveness.",
+    "Support both live webcam capture (via navigator.mediaDevices.getUserMedia) and clean file upload (drag & drop or click).",
+    "Include simulated realistic AI try-on generation: when user hits 'Generate Preview' or AI chat updates the look, show an authentic 10-15s multi-stage progress (e.g., 'Analyzing facial geometry...', 'Aligning plate cuirass...', 'Synthesizing lighting and shadows...', 'Finalizing battle-ready avatar').",
+    "Equip the AI assistant with natural language understanding for queries like 'Find black helmets under $50', 'Make me look like a stealthy assassin', 'Add a shield and boots', 'Dark aesthetic'. The assistant responds with conversational advice AND directly filters the catalog or updates the equipped gear tray.",
+    "Add speech synthesis and SpeechRecognition (mic toggle) for hands-free voice styling if supported by browser, falling back smoothly.",
+    "Build a rich catalog of ~30 items with categories (Helmets, Body Armor, Cloaks & Robes, Tunics, Boots, Weapons & Shields, Accessories), price filters (< $50, $50-$100, $100+), gender cuts (Unisex, Men, Women), and aesthetic tags.",
+    "Implement an Item Detail Drawer / Modal that showcases artisan vendor, lore, specifications, price, and instant 'Equip to Mirror' / 'Unequip' buttons.",
+    "Ensure the feature is embeddable or standalone, displaying an 'Integration Helper' ribbon so hackathon judges can see how to plug it into any LARP marketplace nav/modal.",
+    "Use data-testid on all interactive buttons, inputs, filter toggles, catalog items, and preview canvases."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Avoid flat digital grey. Tint backgrounds with midnight slate (#0b0c10) and warm ember gold accents (#c59a53).",
+    "Never use Inter for headings. Use serif font Cinzel or Cormorant Garamond for headings and Outfit/IBM Plex for UI.",
+    "Never use pure transparent backgrounds for navbars, modals, or dropdowns. Always provide solid or frosted glass backdrop (backdrop-blur-xl bg-[#13161c]/95).",
+    "Ensure WCAG AA contrast ratio (> 4.5:1) for all body text against dark backgrounds.",
+    "All interactive elements must have explicit hover states with text color specified and subtle scale or border glow.",
+    "Use sonner for instant toast feedback when items are equipped, selfie is captured, or AI updates the fitting room."
   ]
 }

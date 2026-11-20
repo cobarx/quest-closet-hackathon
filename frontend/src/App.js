@@ -1,21 +1,19 @@
 import "@/App.css";
+import "./features/fitting-room/fitting-room.css";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { Show, SignIn, SignUp } from "@clerk/react";
-import { Toaster } from "@/components/ui/sonner";
-import ClerkAuthProvider from "@/components/auth/ClerkAuthProvider";
-import { Header } from "@/components/Header";
-import { CartDrawer } from "@/components/CartDrawer";
-import { LangProvider } from "@/lib/i18n";
-import { AppStateProvider } from "@/lib/appState";
-import Home from "@/pages/Home";
-import Profile from "@/pages/Profile";
-import Events from "@/pages/Events";
-import Shop from "@/pages/Shop";
-import BuildLook from "@/pages/BuildLook";
-import Interview from "@/pages/Interview";
-import LookDetail from "@/pages/LookDetail";
-import Looks from "@/pages/Looks";
-import { Checkout, Orders, PaymentCancel, PaymentSuccess } from "@/pages/Commerce";
+import { Toaster } from "./components/ui/sonner";
+import ClerkAuthProvider from "./components/auth/ClerkAuthProvider";
+import { StoreProvider } from "./store/StoreContext";
+import { StoreFooter, StoreHeader } from "./store/StoreHeader";
+import { CartDrawer } from "./store/CartDrawer";
+import HomePage from "./pages/HomePage";
+import ShopPage from "./pages/ShopPage";
+import ProductPage from "./pages/ProductPage";
+import FittingRoomPage from "./pages/FittingRoomPage";
+import EventsPage from "./pages/EventsPage";
+import { OrdersPage, PaymentCancel, PaymentSuccess } from "./pages/Commerce";
 
 const RequireSignIn = () => (
   <>
@@ -24,49 +22,50 @@ const RequireSignIn = () => (
   </>
 );
 
-const AuthPage = ({ children }) => <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-10">{children}</div>;
+const AuthPage = ({ children }) => <div className="flex min-h-[70vh] items-center justify-center px-4 py-10">{children}</div>;
 
-function Layout() {
+const Layout = () => {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return (
-    <div className="grain min-h-screen bg-stone-950">
-      <Header />
+    <div className="fr-root min-h-screen">
+      <StoreHeader />
       <main><Outlet /></main>
+      <StoreFooter />
       <CartDrawer />
-      <Toaster position="top-center" />
     </div>
   );
-}
+};
 
 function App() {
   return (
-    <LangProvider>
+    <div className="App">
       <BrowserRouter>
         <ClerkAuthProvider>
-          <AppStateProvider>
+          <StoreProvider>
             <Routes>
               <Route element={<Layout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/shop" element={<Navigate to="/shop/all" replace />} />
+                <Route path="/shop/:slug" element={<ShopPage />} />
+                <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/fitting-room" element={<FittingRoomPage />} />
+                <Route path="/events" element={<EventsPage />} />
                 <Route path="/sign-in/*" element={<AuthPage><SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" withSignUp /></AuthPage>} />
                 <Route path="/sign-up/*" element={<AuthPage><SignUp routing="path" path="/sign-up" signInUrl="/sign-in" /></AuthPage>} />
-                <Route path="/" element={<Home />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/build" element={<BuildLook />} />
-                <Route path="/interview" element={<Interview />} />
-                <Route path="/looks" element={<Looks />} />
-                <Route path="/looks/:id" element={<LookDetail />} />
-                <Route path="/checkout" element={<Checkout />} />
                 <Route element={<RequireSignIn />}>
-                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/payment/success" element={<PaymentSuccess />} />
-                  <Route path="/payment/cancel" element={<PaymentCancel />} />
                 </Route>
+                <Route path="/payment/cancel" element={<PaymentCancel />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>
-          </AppStateProvider>
+          </StoreProvider>
         </ClerkAuthProvider>
       </BrowserRouter>
-    </LangProvider>
+      <Toaster theme="light" position="bottom-center" />
+    </div>
   );
 }
 
