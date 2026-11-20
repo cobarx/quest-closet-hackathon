@@ -33,9 +33,14 @@ const PathMenu = ({ mobile }) => {
     onMouseEnter: () => { clearTimeout(timer.current); setOpen(true); },
     onMouseLeave: () => { timer.current = setTimeout(() => setOpen(false), 150); },
   };
+  const overTrigger = useRef(false);
+  const triggerHover = !canHover ? {} : {
+    onPointerEnter: () => { overTrigger.current = true; },
+    onPointerLeave: () => { overTrigger.current = false; },
+  };
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-      <DropdownMenuTrigger {...hover} data-testid={`${p}-choose-path-trigger`}
+    <DropdownMenu open={open} onOpenChange={(v) => { if (!v && overTrigger.current) return; setOpen(v); }} modal={false}>
+      <DropdownMenuTrigger {...hover} {...triggerHover} onPointerDown={(e) => { if (canHover && e.pointerType === "mouse") { e.preventDefault(); setOpen(true); } }} data-testid={`${p}-choose-path-trigger`}
         className={`flex items-center gap-1 whitespace-nowrap rounded-md outline-none transition-colors ${mobile ? "px-3 py-1.5 text-xs" : "px-2.5 py-2 text-sm"} ${active ? "text-amber-400" : "text-stone-300 hover:text-amber-200"}`}>
         {t("choose_path")} <ChevronDown size={14} />
       </DropdownMenuTrigger>

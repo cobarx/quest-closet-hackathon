@@ -1,0 +1,26 @@
+{
+  "summary": "Tested only the frontend for the 'Choose your path' hover dropdown (Header.jsx PathMenu). Hover opens the menu, keeps it open over the items, and closes it when the mouse moves away. This works at 1920px (nav-*) and at 1000px and 800px (mnav-*, the Emergent preview pane case). Clicking items goes to the right page (/interview, /build). French labels are correct. Touch emulation at 390x844: canHover=false, tapping opens the menu, tapping an item navigates, and a second tap closes it. One UX problem on mouse devices: after hover opens the menu, clicking the trigger CLOSES it, because Radix toggles on pointerdown. The menu disappears under the user's cursor, and a second click is needed to reopen it. It does not get stuck.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Header PathMenu", "issue": "On a mouse device, hovering opens the menu, then clicking the trigger closes it (Radix DropdownMenuTrigger toggles open state on pointerdown). Seen at 1920, 1000 and 800px. Users who hover and then click (very common) see the menu vanish.", "selector": "[data-testid=nav-choose-path-trigger], [data-testid=mnav-choose-path-trigger]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "In PathMenu, when canHover is true, make a click on the trigger keep the menu open rather than toggle it. For example: add onPointerDown={(e)=>{ if (canHover) { e.preventDefault(); setOpen(true); } }} to the trigger, or ignore the onOpenChange(false) that pointerdown sends while the mouse is hovering. Keep tap-to-toggle for touch devices."
+  ],
+  "critical_code_review_comments": [
+    "canHover is computed with matchMedia on every render and is not reactive. That is fine in practice, but a hybrid device (touch laptop) only reports the primary pointer.",
+    "The 150ms close timer is not cleared on unmount. Minor."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "92% (all requested flows pass; hover-then-click closes the menu)"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "PathMenu hover was tested at 1920/1000/800px, French labels checked, touch tested at 390x844. Only open issue: on mouse devices, hover then click on the trigger closes the menu.",
+  "rca of the issue": "The original bug is fixed: hover now depends on (hover: hover) and (pointer: fine), so the compact mnav menu opens on hover in a narrow window with a mouse. Remaining issue: the Radix trigger's built-in onPointerDown calls onOpenChange(!open). Hover has already set open=true, so the click sets it to false."
+}

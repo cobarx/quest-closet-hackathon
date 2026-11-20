@@ -13,6 +13,76 @@ import { useApp } from "@/lib/appState";
 const CITIES = ["Montréal", "Laval", "Longueuil", "Québec", "Gatineau", "Sherbrooke", "Trois-Rivières", "Saint-Jérôme", "Granby", "Drummondville", "Laurentides", "Lanaudière", "Montérégie", "Estrie", "Mauricie", "Autre / Other"];
 const GENDERS = [["female", "g_woman"], ["male", "g_man"], ["non-binary person", "g_nb"], ["", "g_none"]];
 
+const UnitInput = ({ unit, testId, ...props }) => (
+  <div className="relative mt-1.5 flex-1">
+    <Input type="number" min="0" className="bg-stone-950 pr-10" data-testid={testId} {...props} />
+    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500">{unit}</span>
+  </div>
+);
+
+const toImperial = (cm, kg) => {
+  const inches = cm ? Number(cm) / 2.54 : 0;
+  const ft = Math.floor(inches / 12);
+  return { ft: cm ? String(ft) : "", inch: cm ? String(Math.round(inches - ft * 12)) : "", lb: kg ? String(Math.round(Number(kg) * 2.20462)) : "" };
+};
+
+const BodyFields = ({ f, set }) => {
+  const { t } = useLang();
+  const [units, setUnits] = useState(() => localStorage.getItem("units") || "metric");
+  const [imp, setImp] = useState(() => toImperial(f.height_cm, f.weight_kg));
+  const metricKey = `${f.height_cm}|${f.weight_kg}`;
+  const lastSet = useRef(metricKey);
+
+  useEffect(() => {
+    if (metricKey !== lastSet.current) setImp(toImperial(f.height_cm, f.weight_kg));
+  }, [metricKey, f.height_cm, f.weight_kg]);
+
+  const choose = (u) => { setUnits(u); localStorage.setItem("units", u); setImp(toImperial(f.height_cm, f.weight_kg)); };
+  const setImperial = (k) => (e) => {
+    const next = { ...imp, [k]: e.target.value };
+    setImp(next);
+    const inches = Number(next.ft || 0) * 12 + Number(next.inch || 0);
+    const cm = next.ft || next.inch ? String(Math.round(inches * 2.54)) : "";
+    const kg = next.lb ? String(Math.round(Number(next.lb) / 2.20462)) : "";
+    lastSet.current = `${cm}|${kg}`;
+    set("height_cm")(cm);
+    set("weight_kg")(kg);
+  };
+  const opt = <span className="text-stone-500">({t("optional")})</span>;
+
+  return (
+    <>
+      <div className="sm:col-span-2">
+        <div className="inline-flex rounded-full border border-stone-700 p-0.5 text-xs font-semibold" data-testid="units-toggle">
+          {["metric", "imperial"].map((u) => (
+            <button key={u} type="button" onClick={() => choose(u)} data-testid={`units-${u}-btn`}
+              className={`rounded-full px-3 py-1.5 transition-colors ${units === u ? "bg-amber-500 text-stone-950" : "text-stone-300 hover:text-amber-300"}`}>
+              {t(`units_${u}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <Label>{t("ob_height")} {opt}</Label>
+        {units === "metric" ? (
+          <UnitInput unit="cm" value={f.height_cm} onChange={(e) => set("height_cm")(e.target.value)} testId="onboarding-height-input" />
+        ) : (
+          <div className="flex gap-2">
+            <UnitInput unit={t("unit_ft")} value={imp.ft} onChange={setImperial("ft")} testId="onboarding-height-ft-input" />
+            <UnitInput unit={t("unit_in")} value={imp.inch} onChange={setImperial("inch")} testId="onboarding-height-in-input" />
+          </div>
+        )}
+      </div>
+      <div>
+        <Label>{t("ob_weight")} {opt}</Label>
+        {units === "metric"
+          ? <UnitInput unit="kg" value={f.weight_kg} onChange={(e) => set("weight_kg")(e.target.value)} testId="onboarding-weight-input" />
+          : <UnitInput unit="lb" value={imp.lb} onChange={setImperial("lb")} testId="onboarding-weight-lb-input" />}
+      </div>
+    </>
+  );
+};
+
 export default function Profile() {
   const { t, lang } = useLang();
   const { api, profile, setProfile, toast } = useApp();
@@ -76,14 +146,7 @@ export default function Profile() {
               <SelectContent>{GENDERS.map(([v, k]) => <SelectItem key={k} value={v || "none"}>{t(k)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>{t("ob_height")} <span className="text-stone-500">({t("optional")})</span></Label>
-            <Input type="number" className="mt-1.5 bg-stone-950" value={f.height_cm} onChange={(e) => set("height_cm")(e.target.value)} data-testid="onboarding-height-input" />
-          </div>
-          <div>
-            <Label>{t("ob_weight")} <span className="text-stone-500">({t("optional")})</span></Label>
-            <Input type="number" className="mt-1.5 bg-stone-950" value={f.weight_kg} onChange={(e) => set("weight_kg")(e.target.value)} data-testid="onboarding-weight-input" />
-          </div>
+          <BodyFields f={f} set={set} />
         </div>
 
         <div>
