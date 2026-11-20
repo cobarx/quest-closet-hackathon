@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Show, UserButton, useAuth } from "@clerk/react";
 import { ShoppingBag, Flame, ChevronDown, Sparkles, Swords } from "lucide-react";
@@ -25,13 +26,19 @@ const PathMenu = ({ mobile }) => {
   const { pathname } = useLocation();
   const active = pathname === "/build" || pathname === "/interview";
   const p = mobile ? "mnav" : "nav";
+  const [open, setOpen] = useState(false);
+  const timer = useRef();
+  const hover = mobile ? {} : {
+    onMouseEnter: () => { clearTimeout(timer.current); setOpen(true); },
+    onMouseLeave: () => { timer.current = setTimeout(() => setOpen(false), 150); },
+  };
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger data-testid={`${p}-choose-path-trigger`}
+    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
+      <DropdownMenuTrigger {...hover} data-testid={`${p}-choose-path-trigger`}
         className={`flex items-center gap-1 whitespace-nowrap rounded-md outline-none transition-colors ${mobile ? "px-3 py-1.5 text-xs" : "px-2.5 py-2 text-sm"} ${active ? "text-amber-400" : "text-stone-300 hover:text-amber-200"}`}>
         {t("choose_path")} <ChevronDown size={14} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="border-stone-800 bg-stone-950">
+      <DropdownMenuContent {...hover} align="start" sideOffset={4} className="border-stone-800 bg-stone-950">
         <DropdownMenuItem onSelect={() => navigate("/build")} data-testid={`${p}-path-a-item`} className="cursor-pointer gap-2">
           <Swords size={14} className="text-amber-400" />{t("flow_a_title")}
         </DropdownMenuItem>
