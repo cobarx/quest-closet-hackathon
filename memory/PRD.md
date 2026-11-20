@@ -1,34 +1,49 @@
-# LARP Outfitter (Quête & Équipement / Quest & Gear) - PRD
+# PRD: LARP Virtual Fitting Room
 
-## Original problem
-App where LARP players buy gear for events. Track LARP events within 3-4h of Montreal. Categories: camping, costumes, makeup, weapons. Selfie upload + AI preview of the player in gear. Two flows: (A) pick items → preview, (B) AI character interview → recommendations.
-
-## Decisions (approved plan)
-Bilingual FR (default)/EN; Google sign-in (Emergent Clerk); Quebec residents only (checkbox + QC postal code at checkout); events in Quebec only; in-app shop (CAD); Stripe test mode with GST+QST (Stripe Tax calc_only); Emergent universal key for AI.
+## Problem statement
+A standalone feature for a LARP gear marketplace (main site not built yet). Users take a selfie, then see an AI-made preview of themselves wearing chosen gear. They can chat (or speak) with an AI assistant to change the look. The preview updates live. Users can click an item to see info and price, and filter by price, gender, type and more. It must be easy to plug into the main site later.
+Added on 2026-11-20: when a selfie is added, the user must enter height, weight and gender so gear can be filtered. Every item has sizing info (sizes, length, measurements, fit range, one-of-a-kind).
 
 ## Architecture
-- Backend FastAPI: server.py (routes), ai.py (Claude Sonnet 5.5 web-search events, interview stream, recommendations; Gemini 3.1 flash image preview), catalog.py (24 bilingual products), storage.py (Emergent object storage), clerk_auth.py, setup_stripe.py (creates Stripe products/prices + QC tax registration).
-- Frontend React: lib/i18n.js, lib/appState.js, pages (Landing, Home, Profile, Events, Shop, BuildLook, Interview, LookDetail, Looks, Commerce).
-- Shared AI key allows 1 concurrent LLM request → global lock + retry in ai.py.
+- Backend: `/app/backend/fitting_room.py` (APIRouter `/api/fitting-room`), seed data in `fitting_room_catalog.py`, stored in the shared Mongo `products` collection. `init(db)` adds any missing items on startup.
+- Endpoints: GET /products (filters: category, gender, color, aesthetic, min/max_price, q, height_cm, weight_kg), GET /products/{id}, GET /facets, POST /tryon (Gemini Nano Banana `gemini-3.1-flash-image-preview`), POST /assistant (OpenAI `gpt-5.4`, returns a JSON reply with the actions to take).
+- Frontend: a self-contained module `/app/frontend/src/features/fitting-room/` with a default export `VirtualFittingRoom({ apiBase, onCheckout })`.
+- Session only: selfies, previews, profile and chat are never saved on the server.
 
 ## Implemented (2026-11-20)
-- FR/EN toggle, Google sign-in, profile + Quebec gate + selfie upload
-- AI event search (10 real Quebec events found), refresh, source/last-checked
-- Shop, cart drawer, Flow A builder w/ budget meter, Flow B streaming interview + recommendations, look page (preview polling, swap/remove/add items, add all to cart), looks gallery
-- Stripe checkout (QC address only, GST+QST verified 14.975%), payment success polling, order history
-- Verified via curl + screenshots; full testing-agent run NOT yet done
+- Take a selfie with the webcam or upload a photo, then fill in the required measurements (fit, height in cm or ft/in, weight in kg or lb)
+- AI try-on preview (full body) with staged loading, a "hold to see the original" button and a strip of past looks
+- Catalog of 32 items with AI-made product photos. Filters: category, fit, color, aesthetic, max price, search, and "only gear that fits me"
+- Item drawer showing price, seller, materials and a sizing block (sizes, length, measurements, fit ranges, adjustable, one-of-a-kind, fit status)
+- AI stylist chat with quick prompts and a browser mic button. It equips and removes items, sets filters and the mood, then regenerates the preview automatically. Sizing is enforced on the server.
+- Wardrobe tray with a running total and a Buy outfit button (a placeholder until the marketplace cart exists)
+- Embed helper dialog
 
-## Rule changes (2026-11-20, for branch e.g. `guest-checkout-rules`)
-- No login needed until checkout: anonymous guest id (localStorage → X-Guest-Id header) owns profile, selfie, looks, interview, cart
-- Signing in (at checkout) merges guest data into the Google account (/api/guest/merge)
-- Quebec residency checkbox and gate removed; Montreal is the default city/focus. Shipping still Quebec postal codes only
-- Orders and payment status require sign-in
+## Implemented (2026-11-20, iteration 3)
+- The Quartermaster only sees and suggests listings that are in stock. Server-side checks drop any item it makes up, and also drop suggestions that don't fit the user. Try-on rejects unknown or unavailable items (409). The image prompt tells the model to show only the listed pieces.
+- A "Your selection" strip under the search lists each selected item with price, size, seller and fit. Users can open it, remove it, take it off or swap it in. Items that are taken off are set aside and kept.
+- The stylist understands commands to take off, put back, remove or swap items, using the worn and set-aside item lists. Voice is a continuous hands-free mic mode. Messages sent while the stylist is still answering wait in a queue.
+- The preview regenerates on its own about 1.2s after any outfit change. Emptying the outfit shows the plain selfie again. Filters returned by the stylist are merged with the current ones instead of replacing them.
 
-## Nav & profile edits (2026-11-20)
-- Shop link removed from header nav (/shop route still exists); new "Choose your path" hover dropdown (desktop) / tap-to-expand (mobile) linking Path A (/build) and Path B (/interview)
-- Profile: Units dropdown next to height/weight (Metric cm/kg or Standard ft+in/lb); values always stored in metric; `units` saved on profile
+## Implemented (2026-11-20, iteration 4: code-quality refactor)
+- Backend: `list_products` now takes a `ProductQuery` dataclass and builds its query in `_build_query`. Try-on and the assistant were split into small helpers. LLM ids are type-checked. Catalog `_p`/`_s` take fewer arguments.
+- Frontend: `VirtualFittingRoom` was split into the hooks `useCatalog`, `useOutfit`, `useTryOn` and `useStylist`, plus a `FittingHeader`. SelfieMirror, ProfileDialog and CatalogFilters were broken into sub-components. Lists use stable keys. The eslint-disable comments are gone.
+- Fixes: unit toggles now convert the entered value; "Show all fits" clears the gender filter; stale catalog responses are ignored; one preview per click; a no-op stylist reply no longer restarts the preview; queued stylist turns see the latest filters and mood.
+
+## Implemented (2026-11-20, iteration 5: Bershka-style restyle)
+- A white, monochrome storefront using the Archivo uppercase typeface, with sharp corners and thin black lines.
+- Sections: a sticky nav (HALBERD placeholder logo, category links, bordered search, Embed, Outfit count, and a second scrollable row on mobile); a full-width hero with a boxed "FITTING ROOM" label; 4 edge-to-edge category tiles (Helmets, Armor, Robes & Tunics, Weapons); a black GET THE LOOK section (Rogue, Paladin, Witch, Viking tiles that send the request to the stylist); then the fitting room with an "IT MAY INTEREST YOU" product grid.
+- Category links and tiles scroll to the filtered catalog. Look tiles scroll to the stylist. Grey text and borders were darkened for readable contrast.
+
+## Implemented (2026-11-20, iteration 6: merged Quest Closet into one site)
+- Brand is QUEST CLOSET. React Router pages: home, /shop/:slug (11 tabs, including shoes, makeup-fx and camping), /product/:id, /fitting-room, /events, /orders, /payment/success, /payment/cancel and the Clerk sign-in/sign-up pages.
+- New backend store.py: guest or signed-in cart (sent as X-Guest-Id), guest-to-account merge, Stripe checkout (claimable sandbox, prices from the DB, US/CA shipping, automatic tax falling back to no tax until a head office is set), status polling, webhook, orders, and events near Montreal found by Claude web search.
+- Added 10 seed items (2 shoes, 5 makeup, 3 camping). Camping is wearable:false and kept out of the fitting room. The fitting room's "Add outfit to bag" adds to the shared bag; ?item= and ?look= deep links work.
+- Emergent-managed Clerk Google sign-in.
 
 ## Backlog
-- P0: full end-to-end test run (testing agent); verify preview UI flow + Stripe redirect in browser
-- P1: admin (products, approve events, orders); Flow A vs B usage analytics; hide past events
-- P2: shipping/pickup, rentals, group sharing, expand beyond Quebec
+- Seller listing form, inventory and one-of-a-kind reservation, resuming checkout after sign-in, FR/EN language toggle, rate limits on the AI features
+
+- P1: rate limits or quotas on the paid AI endpoints; masking selfies and chat from session replay; a minimum-price filter; server-side checks on selfie size
+- P1: connect to the real marketplace cart and listings, and let sellers enter sizing
+- P2: Whisper voice input for browsers without speech recognition; shareable look cards

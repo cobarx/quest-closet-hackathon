@@ -1,1 +1,4 @@
-.App { min-height: 100vh; }
+body {
+    background: #ffffff;
+    font-family: "Archivo", sans-serif;
+}

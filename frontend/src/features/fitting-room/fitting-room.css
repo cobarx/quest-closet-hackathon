@@ -1,0 +1,52 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap");
+
+.fr-root {
+  background-color: #ffffff;
+  color: #000000;
+  font-family: "Archivo", "Helvetica Neue", Arial, sans-serif;
+}
+.fr-root ::selection, .fr-overlay ::selection { background: #000; color: #fff; }
+.font-display { font-family: "Archivo", sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; }
+.fr-root .font-mono { font-family: "Archivo", sans-serif; font-weight: 700; }
+
+.fr-eyebrow { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #000; }
+.fr-panel { background: #fff; border: 1px solid #000; }
+
+.fr-btn-primary, .fr-btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  height: 2.75rem; padding: 0 1.25rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+}
+.fr-btn-primary { background: #000; color: #fff; border: 1px solid #000; }
+.fr-btn-primary:hover:not(:disabled) { background: #333; color: #fff; }
+.fr-btn-ghost { border: 1px solid #000; color: #000; background: #fff; }
+.fr-btn-ghost:hover:not(:disabled) { background: #000; color: #fff; }
+.fr-btn-primary:active:not(:disabled), .fr-btn-ghost:active:not(:disabled) { transform: scale(0.98); }
+.fr-btn-primary:disabled, .fr-btn-ghost:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.fr-chip {
+  border: 1px solid #000; padding: 0.35rem 0.8rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  color: #000; background: #fff; transition: background-color 0.2s, color 0.2s;
+}
+.fr-chip:hover:not(:disabled) { background: #000; color: #fff; }
+.fr-chip-active { background: #000; color: #fff; }
+
+.fr-card { position: relative; overflow: hidden; background: #fff; transition: opacity 0.25s; }
+.fr-card-equipped { outline: 2px solid #000; outline-offset: -2px; }
+.fr-card-highlight { outline: 2px dashed #000; outline-offset: -2px; }
+
+.fr-mirror-sigil { display: flex; align-items: center; justify-content: center; width: 5rem; height: 5rem; border: 1px solid #000; }
+.fr-rune { width: 56px; height: 56px; border-radius: 999px; border: 2px solid #e2e2e2; border-top-color: #000; animation: fr-spin 0.9s linear infinite; }
+.fr-dot { width: 7px; height: 7px; border-radius: 999px; background: #000; animation: fr-bounce 1s ease-in-out infinite; }
+.fr-pulse { animation: fr-glow 1.8s ease-in-out infinite; }
+.fr-fade-in { animation: fr-fade 0.5s ease both; }
+.fr-rise { animation: fr-rise 0.45s ease both; }
+.fr-tile-img { transition: transform 0.7s cubic-bezier(.2,.7,.2,1); }
+.fr-tile:hover .fr-tile-img { transform: scale(1.04); }
+.fr-label { background: rgba(255,255,255,0.92); color: #000; font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; }
+
+@keyframes fr-spin { to { transform: rotate(360deg); } }
+@keyframes fr-bounce { 0%, 100% { opacity: 0.3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
+@keyframes fr-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0.35); } 50% { box-shadow: 0 0 0 6px rgba(0,0,0,0); } }
+@keyframes fr-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fr-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
