@@ -100,7 +100,8 @@ class ProfileIn(BaseModel):
     height_cm: Optional[int] = Field(None, ge=80, le=250)
     weight_kg: Optional[int] = Field(None, ge=25, le=300)
     budget: float = Field(400, ge=20, le=10000)
-    units: Literal["metric", "imperial"] = "metric"
+    height_unit: Literal["cm", "ftin"] = "cm"
+    weight_unit: Literal["kg", "lb"] = "kg"
 
 
 async def get_profile_doc(user_id):

@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Show, UserButton, useAuth } from "@clerk/react";
 import { ShoppingBag, Flame, ChevronDown } from "lucide-react";
 import { useLang, money } from "@/lib/i18n";
 import { useApp } from "@/lib/appState";
-import { PathMenu, PATHS } from "@/components/PathMenu";
+import { PathMenu, PATHS, useHoverMenu } from "@/components/PathMenu";
 
 export const LangToggle = () => {
   const { lang, setLang } = useLang();
@@ -31,8 +30,7 @@ export const Header = () => {
   const { cart, byId, setCartOpen } = useApp();
   const { isSignedIn } = useAuth();
   const { pathname } = useLocation();
-  const [mPaths, setMPaths] = useState(false);
-  useEffect(() => setMPaths(false), [pathname]);
+  const { open: mPaths, ref: mRef, wrapperProps: mHover, triggerProps: mTrigger } = useHoverMenu();
   const nav = NAV.filter(([to]) => isSignedIn || to !== "/orders");
   const [first, ...rest] = nav;
   const count = cart.reduce((s, i) => s + i.qty, 0);
@@ -68,9 +66,10 @@ export const Header = () => {
           </Show>
         </div>
       </div>
+        <div ref={mRef} className="lg:hidden">
         <nav className="flex gap-1 overflow-x-auto border-t border-stone-800/60 px-3 py-1.5 lg:hidden">
           <NavLink to={first[0]} data-testid={`mnav-${first[1]}`} className={mNavCls}>{t(first[1])}</NavLink>
-          <button type="button" onClick={() => setMPaths((o) => !o)} aria-expanded={mPaths} data-testid="mnav-path-menu-trigger"
+          <button type="button" {...mTrigger} {...mHover} aria-expanded={mPaths} data-testid="mnav-path-menu-trigger"
             className={`flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-1.5 text-xs ${pathActive || mPaths ? "bg-stone-800 text-amber-400" : "text-stone-300"}`}>
             {t("choose_path")}<ChevronDown size={12} className={`transition-transform ${mPaths ? "rotate-180" : ""}`} />
           </button>
@@ -79,7 +78,7 @@ export const Header = () => {
           ))}
         </nav>
         {mPaths && (
-          <div className="grid gap-1 border-t border-stone-800/60 px-3 py-2 sm:grid-cols-2 lg:hidden" data-testid="mnav-path-menu-panel">
+          <div {...mHover} className="grid gap-1 border-t border-stone-800/60 px-3 py-2 sm:grid-cols-2 lg:hidden" data-testid="mnav-path-menu-panel">
             {PATHS.map(({ to, title, icon: Icon, id }) => (
               <Link key={to} to={to} data-testid={`mnav-path-${id}-link`}
                 className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${pathname.startsWith(to) ? "bg-stone-800 text-amber-400" : "text-stone-200"}`}>
@@ -88,6 +87,7 @@ export const Header = () => {
             ))}
           </div>
         )}
+        </div>
     </header>
   );
 };
