@@ -7,6 +7,11 @@ import { useEvents } from "@/components/EventPicker";
 import { useLang } from "@/lib/i18n";
 import { useApp, API } from "@/lib/appState";
 
+const ageInGenre = (age, genre = "") => {
+  const nums = age.match(/\d+/g);
+  return !!nums && nums.every((n) => genre.includes(n));
+};
+
 export default function Events() {
   const { t, lang } = useLang();
   const { api, toast } = useApp();
@@ -57,9 +62,12 @@ export default function Events() {
                 </a>
               ) : <span data-testid={`event-name-${e.id}`}>{e.name}</span>}
             </h3>
-            <p className="mt-1.5 flex items-start gap-1.5 text-sm text-stone-300" data-testid={`event-age-${e.id}`}>
-              <Users size={14} className="mt-0.5 shrink-0 text-amber-500" />{e[`age_range_${lang}`] || t("ev_age_unknown")}
-            </p>
+            {e[`genre_${lang}`] && <p className="mt-1.5 text-sm font-medium text-blue-200" data-testid={`event-genre-${e.id}`}>{e[`genre_${lang}`]}</p>}
+            {e[`age_range_${lang}`] && !ageInGenre(e[`age_range_${lang}`], e[`genre_${lang}`]) && (
+              <p className="mt-1.5 flex items-start gap-1.5 text-sm text-stone-300" data-testid={`event-age-${e.id}`}>
+                <Users size={14} className="mt-0.5 shrink-0 text-amber-500" />{e[`age_range_${lang}`]}
+              </p>
+            )}
             <p className="mt-1.5 flex items-start gap-1.5 text-sm text-stone-300" data-testid={`event-location-${e.id}`}>
               <MapPin size={14} className="mt-0.5 shrink-0 text-amber-500" />{e.location}
             </p>
@@ -72,7 +80,6 @@ export default function Events() {
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-400">
-              {e[`genre_${lang}`] && <span className="rounded-full bg-blue-900/60 px-2.5 py-0.5 font-semibold text-blue-200">{e[`genre_${lang}`]}</span>}
               <span className="flex items-center gap-1"><Car size={14} />{e.distance_km} km · {e.drive_time} {t("ev_from_mtl")}</span>
             </div>
             <p className="mt-3 flex-1 text-sm text-stone-400">{e[`description_${lang}`]}</p>

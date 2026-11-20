@@ -55,7 +55,7 @@ async def search_events():
         '"recurrence_en": str (e.g. "Every summer weekend, May–Sept"; empty if one-off), "recurrence_fr": str, '
         '"age_range_en": str (e.g. "16+", "18+", "All ages (minors with a guardian)"; empty if not stated), "age_range_fr": str, '
         '"location": str (town, region), "distance_km": int (driving km from Montreal), "drive_time": str like "2h15", '
-        '"genre_en": str, "genre_fr": str, "description_en": str (max 30 words), "description_fr": str (max 30 words), '
+        '"genre_en": str (genre/tone, include the age group if stated, e.g. "Medieval, teen LARP (ages 12–17)"), "genre_fr": str, "description_en": str (max 30 words), "description_fr": str (max 30 words), '
         '"url": str (official organizer site)}. Only include real events you found in search results.'
     )
     resp = await _call(lambda: chat.send_message_with_tools(UserMessage(text=prompt)))
