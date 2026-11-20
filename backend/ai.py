@@ -4,6 +4,7 @@ import json
 import os
 import re
 import uuid
+from datetime import date
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent, TextDelta, StreamDone
 
@@ -42,17 +43,19 @@ async def search_events():
     chat = LlmChat(api_key=_key(), session_id=f"events-{uuid.uuid4()}",
                    system_message="You are a meticulous research assistant for the Quebec LARP (GN, grandeur nature) scene.")
     chat.with_model("anthropic", "claude-sonnet-5-5").with_tools(
-        [{"type": "web_search_20250305", "name": "web_search", "max_uses": 6}])
+        [{"type": "web_search_20250305", "name": "web_search", "max_uses": 12}])
     prompt = (
         "Search the web in both French and English for upcoming or recurring LARP events (jeux de rôle grandeur nature, GN) "
         "held in the province of Quebec, Canada, within about a 4-hour drive of Montreal (e.g. Laurentides, Lanaudière, "
         "Estrie/Eastern Townships, Mauricie, Montérégie, Outaouais, Québec City, Centre-du-Québec). Exclude events in Ontario or the USA. "
         "Search terms to try: 'GN Québec 2026', 'grandeur nature médiéval fantastique Québec', 'Bicolline', 'Terres de Bélénos', 'LARP Quebec'. "
-        "Return ONLY a JSON array (no prose) of up to 10 events. Each object: "
+        "Search each organizer site for its announced calendar. Return ONLY a JSON array (no prose) of up to 15 events. Each object: "
+        f"Today is {date.today().isoformat()}. Only include events with a confirmed upcoming date on or after today; skip anything with no announced future date. "
+        "Never mention past dates, past editions or past seasons anywhere in the output. "
         "One entry per event or event series: never list the same series twice; put its other dates in recurrence. "
-        '{"name": str (official name only, no dates), "start_date": "YYYY-MM-DD or empty", "end_date": "YYYY-MM-DD or empty", '
-        '"dates_text_en": str (next occurrence date AND start/end time if known, e.g. "Sat Nov 21, 2026, 10 a.m. – 11 p.m."), "dates_text_fr": str (same in French), '
-        '"recurrence_en": str (e.g. "Every summer weekend, May–Sept"; empty if one-off), "recurrence_fr": str, '
+        '{"name": str (official name only, no dates), "start_date": "YYYY-MM-DD" (next upcoming occurrence, required), "end_date": "YYYY-MM-DD" (end of that occurrence), '
+        '"dates_text_en": str (ONLY the next upcoming occurrence: date AND start/end time if known, e.g. "Sat Nov 21, 2026, 10 a.m. – 11 p.m."), "dates_text_fr": str (same in French), '
+        '"recurrence_en": str (the repeat pattern or other UPCOMING dates only, e.g. "Every summer weekend, May–Sept"; empty if one-off), "recurrence_fr": str, '
         '"age_range_en": str (e.g. "16+", "18+", "All ages (minors with a guardian)"; empty if not stated), "age_range_fr": str, '
         '"location": str (town, region), "distance_km": int (driving km from Montreal), "drive_time": str like "2h15", '
         '"genre_en": str (genre/tone, include the age group if stated, e.g. "Medieval, teen LARP (ages 12–17)"), "genre_fr": str, "description_en": str (max 30 words), "description_fr": str (max 30 words), '

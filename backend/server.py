@@ -8,6 +8,7 @@ from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -161,7 +162,14 @@ async def refresh_events():
         doc.update({"key": key, "source_url": e.get("url", ""), "last_checked": checked})
         await db.events.update_one({"key": key}, {"$set": doc, "$setOnInsert": {"id": str(uuid.uuid4())}}, upsert=True)
     if found:
-        await db.events.delete_many({"last_checked": {"$ne": checked}})
+        today = datetime.now(timezone.utc).date().isoformat()
+        fresh = await db.events.find({"last_checked": checked}, {"_id": 0, "url": 1}).to_list(100)
+        hosts = {urlparse(e["url"]).netloc.removeprefix("www.") for e in fresh if e.get("url")}
+        async for old in db.events.find({"last_checked": {"$ne": checked}}, {"_id": 0, "id": 1, "url": 1, "start_date": 1, "end_date": 1}):
+            past = max(old.get("start_date") or "", old.get("end_date") or "") < today
+            dup = urlparse(old.get("url") or "").netloc.removeprefix("www.") in hosts
+            if past or dup:
+                await db.events.delete_one({"id": old["id"]})
     return len(found)
 
 
@@ -181,7 +189,9 @@ async def _refresh_job():
 
 @api.get("/events")
 async def list_events():
-    return await db.events.find({}, {"_id": 0}).sort("distance_km", ASCENDING).to_list(100)
+    today = datetime.now(timezone.utc).date().isoformat()
+    upcoming = {"$or": [{"start_date": {"$gte": today}}, {"end_date": {"$gte": today}}]}
+    return await db.events.find(upcoming, {"_id": 0}).sort("start_date", ASCENDING).to_list(100)
 
 
 @api.post("/events/refresh")
