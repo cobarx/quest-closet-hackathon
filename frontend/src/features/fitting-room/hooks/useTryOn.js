@@ -17,6 +17,7 @@ export const useTryOn = (api, equipped, styleNote) => {
   outfitRef.current = { equipped, styleNote };
   const selfieRef = useRef(null);
   const profileRef = useRef(null);
+  const cacheRef = useRef(new Map());
 
   const cancel = useCallback(() => {
     reqId.current += 1;
@@ -33,9 +34,11 @@ export const useTryOn = (api, equipped, styleNote) => {
         selfie: selfieRef.current, item_ids: Object.values(items).map((i) => i.id), style_note: note, profile: profileRef.current,
       });
       if (id !== reqId.current) return;
+      const k = outfitKey(items, note);
+      cacheRef.current.set(k, image);
       setPreview(image);
-      setRenderedKey(outfitKey(items, note));
-      setLooks((l) => [{ id: `look-${id}`, image, items, note }, ...l].slice(0, 8));
+      setRenderedKey(k);
+      if (Object.keys(items).length) setLooks((l) => [{ id: `look-${id}`, image, items, note }, ...l].slice(0, 8));
     } catch (e) {
       if (id === reqId.current) toast.error(errorText(e, "Preview failed, please try again"));
     } finally {
@@ -46,6 +49,7 @@ export const useTryOn = (api, equipped, styleNote) => {
   const setSelfie = useCallback((face) => {
     cancel();
     selfieRef.current = face;
+    cacheRef.current.clear();
     setSelfieState(face);
     setPreview(null);
     setLooks([]);
@@ -55,6 +59,7 @@ export const useTryOn = (api, equipped, styleNote) => {
 
   const setProfile = useCallback((profile) => {
     profileRef.current = profile;
+    cacheRef.current.clear();
     cancel();
     setRenderedKey(null);
     setEpoch((e) => e + 1);
@@ -72,12 +77,13 @@ export const useTryOn = (api, equipped, styleNote) => {
   useEffect(() => {
     if (!selfie || key === renderedKey) return undefined;
     cancel();
-    if (!hasItems) {
-      setPreview(null);
+    const cached = cacheRef.current.get(key);
+    if (cached) {
+      setPreview(cached);
       setRenderedKey(key);
       return undefined;
     }
-    timerRef.current = setTimeout(() => generate(outfitRef.current.equipped, outfitRef.current.styleNote), AUTO_DELAY_MS);
+    timerRef.current = setTimeout(() => generate(outfitRef.current.equipped, outfitRef.current.styleNote), hasItems ? AUTO_DELAY_MS : 0);
     return () => clearTimeout(timerRef.current);
   }, [selfie, key, renderedKey, hasItems, epoch, cancel, generate]);
 
