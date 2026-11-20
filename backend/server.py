@@ -146,6 +146,9 @@ async def download(path: str, user: dict = Uid):
 
 
 # ---------- Events ----------
+AGE_SUFFIX = re.compile(r"[,;\s]*\(?(?:ages?\s*|âges?\s*)?\d{1,2}\s*(?:\+|ans\s*et\s*plus|[–-]\s*\d{1,2})\s*(?:ans)?\)?\s*$", re.I)
+
+
 def _event_key(name):
     return re.sub(r"[^a-z0-9]", "", name.lower())
 
@@ -159,6 +162,8 @@ async def refresh_events():
                                           "drive_time", "genre_en", "genre_fr", "description_en", "description_fr", "url",
                                           "recurrence_en", "recurrence_fr", "age_range_en", "age_range_fr")}
         doc["distance_km"] = int(e.get("distance_km") or 0)
+        for g in ("genre_en", "genre_fr"):
+            doc[g] = AGE_SUFFIX.sub("", doc[g]).strip()
         doc.update({"key": key, "source_url": e.get("url", ""), "last_checked": checked})
         await db.events.update_one({"key": key}, {"$set": doc, "$setOnInsert": {"id": str(uuid.uuid4())}}, upsert=True)
     if found:
@@ -191,7 +196,11 @@ async def _refresh_job():
 async def list_events():
     today = datetime.now(timezone.utc).date().isoformat()
     upcoming = {"$or": [{"start_date": {"$gte": today}}, {"end_date": {"$gte": today}}]}
-    return await db.events.find(upcoming, {"_id": 0}).sort("start_date", ASCENDING).to_list(100)
+    events = await db.events.find(upcoming, {"_id": 0}).sort("start_date", ASCENDING).to_list(100)
+    for e in events:
+        for g in ("genre_en", "genre_fr"):
+            e[g] = AGE_SUFFIX.sub("", e.get(g) or "").strip()
+    return events
 
 
 @api.post("/events/refresh")
