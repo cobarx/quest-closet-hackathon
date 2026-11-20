@@ -7,7 +7,7 @@ import uuid
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Literal, Optional
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
@@ -100,6 +100,7 @@ class ProfileIn(BaseModel):
     height_cm: Optional[int] = Field(None, ge=80, le=250)
     weight_kg: Optional[int] = Field(None, ge=25, le=300)
     budget: float = Field(400, ge=20, le=10000)
+    units: Literal["metric", "imperial"] = "metric"
 
 
 async def get_profile_doc(user_id):

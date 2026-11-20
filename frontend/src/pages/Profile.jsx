@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthImage } from "@/components/AuthImage";
 import { useLang, money } from "@/lib/i18n";
+import { cmToFtIn, ftInToCm, kgToLb, lbToKg } from "@/lib/units";
 import { useApp } from "@/lib/appState";
 
 const CITIES = ["Montréal", "Laval", "Longueuil", "Québec", "Gatineau", "Sherbrooke", "Trois-Rivières", "Saint-Jérôme", "Granby", "Drummondville", "Laurentides", "Lanaudière", "Montérégie", "Estrie", "Mauricie", "Autre / Other"];
@@ -18,15 +19,38 @@ export default function Profile() {
   const { api, profile, setProfile, toast } = useApp();
   const navigate = useNavigate();
   const fileRef = useRef();
-  const [f, setF] = useState({ city: "Montréal", gender: "", height_cm: "", weight_kg: "", budget: 400 });
+  const [f, setF] = useState({ city: "Montréal", gender: "", height_cm: "", weight_kg: "", budget: 400, units: "metric" });
+  const [imp, setImp] = useState({ ft: "", inch: "", lb: "" });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  const loaded = useRef(false);
   useEffect(() => {
-    if (profile) setF((o) => ({ ...o, ...Object.fromEntries(Object.entries(profile).filter(([, v]) => v !== null)) }));
+    // Fill the form once from the saved profile; later profile updates (e.g. selfie upload) must not wipe unsaved edits.
+    if (!profile || loaded.current) return;
+    loaded.current = true;
+    setF((o) => ({ ...o, ...Object.fromEntries(Object.entries(profile).filter(([, v]) => v !== null)) }));
+    setImp({ ...cmToFtIn(profile.height_cm), lb: kgToLb(profile.weight_kg) });
   }, [profile]);
 
   const set = (k) => (v) => setF((o) => ({ ...o, [k]: v }));
+  const setI = (k) => (v) => setImp((o) => ({ ...o, [k]: v }));
+  const isImp = f.units === "imperial";
+
+  const switchUnits = (u) => {
+    if (u === f.units) return;
+    if (u === "imperial") {
+      setImp({ ...cmToFtIn(f.height_cm), lb: kgToLb(f.weight_kg) });
+    } else {
+      const h = ftInToCm(imp.ft, imp.inch), w = lbToKg(imp.lb);
+      setF((o) => ({ ...o, height_cm: h === null ? "" : String(h), weight_kg: w === null ? "" : String(w) }));
+    }
+    set("units")(u);
+  };
+
+  const metricValues = () => isImp
+    ? { height_cm: ftInToCm(imp.ft, imp.inch), weight_kg: lbToKg(imp.lb) }
+    : { height_cm: f.height_cm ? Number(f.height_cm) : null, weight_kg: f.weight_kg ? Number(f.weight_kg) : null };
 
   const upload = async (file) => {
     if (!file) return;
@@ -44,8 +68,8 @@ export default function Profile() {
   const save = async () => {
     setSaving(true);
     try {
-      const body = { lang, city: f.city, gender: f.gender, budget: Number(f.budget),
-        height_cm: f.height_cm ? Number(f.height_cm) : null, weight_kg: f.weight_kg ? Number(f.weight_kg) : null };
+      const body = { lang, city: f.city, gender: f.gender, budget: Number(f.budget), units: f.units || "metric",
+        ...metricValues() };
       const r = await api("put", "/profile", body);
       setProfile(r);
       toast.success(t("saved"));
@@ -76,13 +100,46 @@ export default function Profile() {
               <SelectContent>{GENDERS.map(([v, k]) => <SelectItem key={k} value={v || "none"}>{t(k)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>{t("ob_height")} <span className="text-stone-500">({t("optional")})</span></Label>
-            <Input type="number" className="mt-1.5 bg-stone-950" value={f.height_cm} onChange={(e) => set("height_cm")(e.target.value)} data-testid="onboarding-height-input" />
-          </div>
-          <div>
-            <Label>{t("ob_weight")} <span className="text-stone-500">({t("optional")})</span></Label>
-            <Input type="number" className="mt-1.5 bg-stone-950" value={f.weight_kg} onChange={(e) => set("weight_kg")(e.target.value)} data-testid="onboarding-weight-input" />
+          <div className="grid gap-5 sm:col-span-2 sm:grid-cols-[1fr_1fr_auto]" data-testid="body-measurements-row">
+            <div>
+              <Label>{t("ob_height")} <span className="text-stone-500">({t("optional")})</span></Label>
+              {isImp ? (
+                <div className="mt-1.5 flex gap-2">
+                  <div className="relative flex-1">
+                    <Input type="number" min="0" className="bg-stone-950 pr-9" value={imp.ft} onChange={(e) => setI("ft")(e.target.value)} data-testid="onboarding-height-ft-input" />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500">{lang === "fr" ? "pi" : "ft"}</span>
+                  </div>
+                  <div className="relative flex-1">
+                    <Input type="number" min="0" max="11" className="bg-stone-950 pr-9" value={imp.inch} onChange={(e) => setI("inch")(e.target.value)} data-testid="onboarding-height-in-input" />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500">{lang === "fr" ? "po" : "in"}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative mt-1.5">
+                  <Input type="number" className="bg-stone-950 pr-10" value={f.height_cm} onChange={(e) => set("height_cm")(e.target.value)} data-testid="onboarding-height-input" />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500">cm</span>
+                </div>
+              )}
+            </div>
+            <div>
+              <Label>{t("ob_weight")} <span className="text-stone-500">({t("optional")})</span></Label>
+              <div className="relative mt-1.5">
+                {isImp
+                  ? <Input type="number" min="0" className="bg-stone-950 pr-10" value={imp.lb} onChange={(e) => setI("lb")(e.target.value)} data-testid="onboarding-weight-lb-input" />
+                  : <Input type="number" className="bg-stone-950 pr-10" value={f.weight_kg} onChange={(e) => set("weight_kg")(e.target.value)} data-testid="onboarding-weight-input" />}
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500">{isImp ? "lb" : "kg"}</span>
+              </div>
+            </div>
+            <div>
+              <Label>{t("ob_units")}</Label>
+              <Select value={f.units || "metric"} onValueChange={switchUnits}>
+                <SelectTrigger className="mt-1.5 bg-stone-950 sm:w-52" data-testid="onboarding-units-select"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="metric" data-testid="units-metric-option">{t("units_metric")}</SelectItem>
+                  <SelectItem value="imperial" data-testid="units-imperial-option">{t("units_imperial")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
