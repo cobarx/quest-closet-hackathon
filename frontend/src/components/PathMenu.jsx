@@ -45,7 +45,7 @@ export const useHoverMenu = () => {
     else setOpen((o) => !o);
   }, []);
 
-  return { open, setOpen, ref, wrapperProps: { onPointerEnter, onPointerLeave }, triggerProps: { onPointerDown, onClick: onTriggerClick } };
+  return { open, setOpen, ref, wrapperProps: { onPointerEnter, onPointerLeave }, triggerProps: { onPointerDown, onClick: onTriggerClick, onClose: () => setOpen(false) } };
 };
 
 export const PathMenu = () => {
@@ -56,7 +56,7 @@ export const PathMenu = () => {
 
   return (
     <div ref={ref} className="relative" {...wrapperProps} data-testid="nav-path-menu">
-      <button type="button" aria-haspopup="true" aria-expanded={open} {...triggerProps}
+      <button type="button" aria-haspopup="true" aria-expanded={open} onPointerDown={triggerProps.onPointerDown} onClick={triggerProps.onClick}
         data-testid="nav-path-menu-trigger"
         className={`flex items-center gap-1 rounded-md px-3 py-2 text-sm transition-colors ${active || open ? "text-amber-400" : "text-stone-300 hover:text-amber-200"}`}>
         {t("choose_path")}
