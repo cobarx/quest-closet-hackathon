@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthImage } from "@/components/AuthImage";
 import { useLang, money } from "@/lib/i18n";
+import { cmToFtIn, ftInToCm, kgToLb, lbToKg } from "@/lib/units";
 import { useApp } from "@/lib/appState";
 
 const CITIES = ["Montréal", "Laval", "Longueuil", "Québec", "Gatineau", "Sherbrooke", "Trois-Rivières", "Saint-Jérôme", "Granby", "Drummondville", "Laurentides", "Lanaudière", "Montérégie", "Estrie", "Mauricie", "Autre / Other"];
@@ -18,15 +19,47 @@ export default function Profile() {
   const { api, profile, setProfile, toast } = useApp();
   const navigate = useNavigate();
   const fileRef = useRef();
-  const [f, setF] = useState({ city: "Montréal", gender: "", height_cm: "", weight_kg: "", budget: 400 });
+  const [f, setF] = useState({ city: "Montréal", gender: "", height_cm: "", weight_kg: "", budget: 400, height_unit: "cm", weight_unit: "kg" });
+  const [imp, setImp] = useState({ ft: "", inch: "", lb: "" });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  const loaded = useRef(false);
   useEffect(() => {
-    if (profile) setF((o) => ({ ...o, ...Object.fromEntries(Object.entries(profile).filter(([, v]) => v !== null)) }));
+    // Fill the form once from the saved profile; later profile updates (e.g. selfie upload) must not wipe unsaved edits.
+    if (!profile || loaded.current) return;
+    loaded.current = true;
+    const legacyImp = profile.units === "imperial"; // older profiles saved one shared unit choice
+    setF((o) => ({
+      ...o, ...Object.fromEntries(Object.entries(profile).filter(([, v]) => v !== null)),
+      height_unit: profile.height_unit || (legacyImp ? "ftin" : "cm"),
+      weight_unit: profile.weight_unit || (legacyImp ? "lb" : "kg"),
+    }));
+    setImp({ ...cmToFtIn(profile.height_cm), lb: kgToLb(profile.weight_kg) });
   }, [profile]);
 
   const set = (k) => (v) => setF((o) => ({ ...o, [k]: v }));
+  const setI = (k) => (v) => setImp((o) => ({ ...o, [k]: v }));
+  const isFtIn = f.height_unit === "ftin";
+  const isLb = f.weight_unit === "lb";
+
+  const switchHeight = (u) => {
+    if (u === f.height_unit) return;
+    if (u === "ftin") setImp((o) => ({ ...o, ...cmToFtIn(f.height_cm) }));
+    else { const h = ftInToCm(imp.ft, imp.inch); set("height_cm")(h === null ? "" : String(h)); }
+    set("height_unit")(u);
+  };
+  const switchWeight = (u) => {
+    if (u === f.weight_unit) return;
+    if (u === "lb") setI("lb")(kgToLb(f.weight_kg));
+    else { const w = lbToKg(imp.lb); set("weight_kg")(w === null ? "" : String(w)); }
+    set("weight_unit")(u);
+  };
+
+  const metricValues = () => ({
+    height_cm: isFtIn ? ftInToCm(imp.ft, imp.inch) : (f.height_cm ? Number(f.height_cm) : null),
+    weight_kg: isLb ? lbToKg(imp.lb) : (f.weight_kg ? Number(f.weight_kg) : null),
+  });
 
   const upload = async (file) => {
     if (!file) return;
@@ -44,8 +77,8 @@ export default function Profile() {
   const save = async () => {
     setSaving(true);
     try {
-      const body = { lang, city: f.city, gender: f.gender, budget: Number(f.budget),
-        height_cm: f.height_cm ? Number(f.height_cm) : null, weight_kg: f.weight_kg ? Number(f.weight_kg) : null };
+      const body = { lang, city: f.city, gender: f.gender, budget: Number(f.budget), height_unit: f.height_unit || "cm", weight_unit: f.weight_unit || "kg",
+        ...metricValues() };
       const r = await api("put", "/profile", body);
       setProfile(r);
       toast.success(t("saved"));
@@ -76,13 +109,48 @@ export default function Profile() {
               <SelectContent>{GENDERS.map(([v, k]) => <SelectItem key={k} value={v || "none"}>{t(k)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>{t("ob_height")} <span className="text-stone-500">({t("optional")})</span></Label>
-            <Input type="number" className="mt-1.5 bg-stone-950" value={f.height_cm} onChange={(e) => set("height_cm")(e.target.value)} data-testid="onboarding-height-input" />
-          </div>
-          <div>
-            <Label>{t("ob_weight")} <span className="text-stone-500">({t("optional")})</span></Label>
-            <Input type="number" className="mt-1.5 bg-stone-950" value={f.weight_kg} onChange={(e) => set("weight_kg")(e.target.value)} data-testid="onboarding-weight-input" />
+          <div className="grid gap-5 sm:col-span-2 sm:grid-cols-2" data-testid="body-measurements-row">
+            <div>
+              <Label>{t("ob_height")} <span className="text-stone-500">({t("optional")})</span></Label>
+              <div className="mt-1.5 flex gap-2">
+                {isFtIn ? (
+                  <>
+                    <div className="relative min-w-0 flex-1">
+                      <Input type="number" min="0" className="bg-stone-950 pr-8" value={imp.ft} onChange={(e) => setI("ft")(e.target.value)} data-testid="onboarding-height-ft-input" />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500">{lang === "fr" ? "pi" : "ft"}</span>
+                    </div>
+                    <div className="relative min-w-0 flex-1">
+                      <Input type="number" min="0" max="11" className="bg-stone-950 pr-8" value={imp.inch} onChange={(e) => setI("inch")(e.target.value)} data-testid="onboarding-height-in-input" />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500">{lang === "fr" ? "po" : "in"}</span>
+                    </div>
+                  </>
+                ) : (
+                  <Input type="number" className="min-w-0 flex-1 bg-stone-950" value={f.height_cm} onChange={(e) => set("height_cm")(e.target.value)} data-testid="onboarding-height-input" />
+                )}
+                <Select value={f.height_unit || "cm"} onValueChange={switchHeight}>
+                  <SelectTrigger className="w-24 shrink-0 bg-stone-950" data-testid="onboarding-height-unit-select"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cm" data-testid="height-unit-cm-option">cm</SelectItem>
+                    <SelectItem value="ftin" data-testid="height-unit-ftin-option">{t("unit_ftin")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>{t("ob_weight")} <span className="text-stone-500">({t("optional")})</span></Label>
+              <div className="mt-1.5 flex gap-2">
+                {isLb
+                  ? <Input type="number" min="0" className="min-w-0 flex-1 bg-stone-950" value={imp.lb} onChange={(e) => setI("lb")(e.target.value)} data-testid="onboarding-weight-lb-input" />
+                  : <Input type="number" className="min-w-0 flex-1 bg-stone-950" value={f.weight_kg} onChange={(e) => set("weight_kg")(e.target.value)} data-testid="onboarding-weight-input" />}
+                <Select value={f.weight_unit || "kg"} onValueChange={switchWeight}>
+                  <SelectTrigger className="w-24 shrink-0 bg-stone-950" data-testid="onboarding-weight-unit-select"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kg" data-testid="weight-unit-kg-option">kg</SelectItem>
+                    <SelectItem value="lb" data-testid="weight-unit-lb-option">{t("unit_lbs")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
 
