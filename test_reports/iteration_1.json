@@ -1,0 +1,32 @@
+{
+  "summary": "Tested event card order and age info, home event strip, the upcoming-only events API, and the Male/Female gender options on the profile page. Everything requested passed in the backend (5/5 pytest) and frontend (Playwright, EN and FR). Did not press Refresh events and did not test Stripe or AI preview.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Events / Home event cards", "issues": [
+        "Brumelance genre line reads 'Immersive adult LARP (Brumelance), 18+'. It repeats the age, which the ai.py prompt says to keep out of the genre.",
+        "In FR, the location text is still in English (e.g. 'between Victoriaville and Drummondville ... venue for this date not confirmed'). Location is a single field with no location_fr.",
+        "Home strip cards have different widths because they only set min-w (the Bicolline card is much wider). The MapPin icon is not lined up when the location wraps to several lines.",
+        "Age, date and recurrence texts are long AI sentences, so the cards are tall. Consider asking for a short age_range (e.g. '18+') plus an optional note."
+      ]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_events_profile_gender.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: strip age info out of genre_en/genre_fr, or tighten the prompt.",
+    "Optional: add location_fr, or ask for locations without English notes.",
+    "Optional: give home event strip cards a fixed width (e.g. w-[260px] shrink-0)."
+  ],
+  "critical_code_review_comments": [
+    "Profile.jsx stores non-binary as the value 'non-binary person'. It works, but it is an odd stored value; 'non-binary' would be cleaner if the AI prompt does not depend on it.",
+    "list_events compares ISO date strings against today in UTC. In the evening Montreal time, an event happening today will drop off the list early."
+  ],
+  "updated_files": ["/app/backend/tests/test_events_profile_gender.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Guest profiles were created for random uuid4 X-Guest-Ids (one from pytest, one from the browser). There is no delete endpoint, so they were not removed.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "3 events in DB (Brumelance 2026-11-21, Bicolline 2026-11-21 recurring, Festival des GN 2027-02-06), all with age_range_en/fr. Card DOM order checked: name(a, target=_blank) > genre > age > location > datetime > recurrence. No 'Source' link and no 'not listed' text. Gender options checked in EN and FR; female persists through the API and after reload."
+}
