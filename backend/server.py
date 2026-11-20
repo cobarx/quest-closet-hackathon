@@ -155,11 +155,28 @@ async def refresh_events():
     for e in found:
         key = _event_key(e["name"])
         doc = {k: e.get(k, "") for k in ("name", "start_date", "end_date", "dates_text_en", "dates_text_fr", "location",
-                                          "drive_time", "genre_en", "genre_fr", "description_en", "description_fr", "url")}
+                                          "drive_time", "genre_en", "genre_fr", "description_en", "description_fr", "url",
+                                          "recurrence_en", "recurrence_fr", "age_range_en", "age_range_fr")}
         doc["distance_km"] = int(e.get("distance_km") or 0)
         doc.update({"key": key, "source_url": e.get("url", ""), "last_checked": checked})
         await db.events.update_one({"key": key}, {"$set": doc, "$setOnInsert": {"id": str(uuid.uuid4())}}, upsert=True)
+    if found:
+        await db.events.delete_many({"last_checked": {"$ne": checked}})
     return len(found)
+
+
+refresh_state = {"running": False, "error": False}
+
+
+async def _refresh_job():
+    try:
+        await refresh_events()
+        refresh_state["error"] = False
+    except Exception as exc:
+        logger.error("event refresh failed: %s", exc)
+        refresh_state["error"] = True
+    finally:
+        refresh_state["running"] = False
 
 
 @api.get("/events")
@@ -169,12 +186,15 @@ async def list_events():
 
 @api.post("/events/refresh")
 async def refresh(user: dict = Uid):
-    try:
-        n = await refresh_events()
-    except Exception as exc:
-        logger.error("event refresh failed: %s", exc)
-        raise HTTPException(502, "Event search failed, please try again")
-    return {"found": n, "events": await list_events()}
+    if not refresh_state["running"]:
+        refresh_state["running"] = True
+        asyncio.create_task(_refresh_job())
+    return refresh_state
+
+
+@api.get("/events/refresh")
+async def refresh_status():
+    return refresh_state
 
 
 async def get_event(event_id):
@@ -513,8 +533,9 @@ app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.envi
 
 async def _seed_events():
     with suppress(Exception):
-        if await db.events.count_documents({}) == 0:
-            await refresh_events()
+        if await db.events.count_documents({}) == 0 and not refresh_state["running"]:
+            refresh_state["running"] = True
+            await _refresh_job()
 
 
 @app.on_event("startup")

@@ -49,7 +49,11 @@ async def search_events():
         "Estrie/Eastern Townships, Mauricie, Montérégie, Outaouais, Québec City, Centre-du-Québec). Exclude events in Ontario or the USA. "
         "Search terms to try: 'GN Québec 2026', 'grandeur nature médiéval fantastique Québec', 'Bicolline', 'Terres de Bélénos', 'LARP Quebec'. "
         "Return ONLY a JSON array (no prose) of up to 10 events. Each object: "
-        '{"name": str, "start_date": "YYYY-MM-DD or empty", "end_date": "YYYY-MM-DD or empty", "dates_text_en": str, "dates_text_fr": str, '
+        "One entry per event or event series: never list the same series twice; put its other dates in recurrence. "
+        '{"name": str (official name only, no dates), "start_date": "YYYY-MM-DD or empty", "end_date": "YYYY-MM-DD or empty", '
+        '"dates_text_en": str (next occurrence date AND start/end time if known, e.g. "Sat Nov 21, 2026, 10 a.m. – 11 p.m."), "dates_text_fr": str (same in French), '
+        '"recurrence_en": str (e.g. "Every summer weekend, May–Sept"; empty if one-off), "recurrence_fr": str, '
+        '"age_range_en": str (e.g. "16+", "18+", "All ages (minors with a guardian)"; empty if not stated), "age_range_fr": str, '
         '"location": str (town, region), "distance_km": int (driving km from Montreal), "drive_time": str like "2h15", '
         '"genre_en": str, "genre_fr": str, "description_en": str (max 30 words), "description_fr": str (max 30 words), '
         '"url": str (official organizer site)}. Only include real events you found in search results.'

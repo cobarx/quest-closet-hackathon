@@ -44,9 +44,11 @@ export default function Home() {
       <div className="mt-5 flex gap-4 overflow-x-auto pb-2">
         {events.slice(0, 6).map((e) => (
           <Link key={e.id} to="/events" className="min-w-[240px] rounded-xl border border-stone-800 bg-stone-900 p-4 hover:border-stone-600" data-testid={`home-event-${e.id}`}>
-            <p className="text-xs text-amber-400">{e[`dates_text_${lang}`] || e.start_date}</p>
-            <p className="mt-1 font-semibold text-stone-100">{e.name}</p>
+            <p className="font-semibold text-stone-100">{e.name}</p>
+            <p className="mt-1 text-xs text-stone-300">{e[`age_range_${lang}`] || t("ev_age_unknown")}</p>
             <p className="mt-1 flex items-center gap-1 text-xs text-stone-400"><MapPin size={12} />{e.location} · {e.drive_time}</p>
+            <p className="mt-1 text-xs text-amber-400">{e[`dates_text_${lang}`] || e.start_date}</p>
+            {e[`recurrence_${lang}`] && <p className="mt-1 text-xs text-stone-400">{e[`recurrence_${lang}`]}</p>}
           </Link>
         ))}
       </div>

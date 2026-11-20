@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Car, ExternalLink, Loader2, MapPin, RefreshCw } from "lucide-react";
+import { CalendarClock, Car, ExternalLink, Loader2, MapPin, RefreshCw, Repeat, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEvents } from "@/components/EventPicker";
 import { useLang } from "@/lib/i18n";
-import { useApp } from "@/lib/appState";
+import { useApp, API } from "@/lib/appState";
 
 export default function Events() {
   const { t, lang } = useLang();
@@ -13,12 +14,23 @@ export default function Events() {
   const [events, setEvents] = useEvents();
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!loading) return;
+    const h = setInterval(async () => {
+      const st = (await axios.get(`${API}/events/refresh`)).data;
+      if (st.running) return;
+      setLoading(false);
+      if (st.error) toast.error(t("error"));
+      setEvents((await axios.get(`${API}/events`)).data);
+    }, 5000);
+    return () => clearInterval(h);
+  }, [loading, setEvents, toast, t]);
+
   const refresh = async () => {
-    setLoading(true);
     try {
-      const r = await api("post", "/events/refresh");
-      setEvents(r.events);
-    } catch { toast.error(t("error")); } finally { setLoading(false); }
+      await api("post", "/events/refresh");
+      setLoading(true);
+    } catch { toast.error(t("error")); }
   };
 
   return (
@@ -38,16 +50,33 @@ export default function Events() {
       <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {events.map((e, i) => (
           <article key={e.id} className="rise flex flex-col rounded-xl border border-stone-800 leather p-5" style={{ animationDelay: `${i * 40}ms` }} data-testid={`event-card-${e.id}`}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="rounded-full bg-blue-900/60 px-2.5 py-0.5 text-[11px] font-semibold text-blue-200">{e[`genre_${lang}`]}</span>
-              <span className="text-xs text-amber-400">{e[`dates_text_${lang}`] || e.start_date}</span>
+            <h3 className="text-xl font-semibold text-amber-50">
+              {e.url ? (
+                <a href={e.url} target="_blank" rel="noreferrer" className="group/link inline-flex items-start gap-1.5 transition-colors hover:text-amber-300" data-testid={`event-name-${e.id}`}>
+                  {e.name}<ExternalLink size={14} className="mt-1.5 shrink-0 opacity-60 group-hover/link:opacity-100" />
+                </a>
+              ) : <span data-testid={`event-name-${e.id}`}>{e.name}</span>}
+            </h3>
+            <p className="mt-1.5 flex items-start gap-1.5 text-sm text-stone-300" data-testid={`event-age-${e.id}`}>
+              <Users size={14} className="mt-0.5 shrink-0 text-amber-500" />{e[`age_range_${lang}`] || t("ev_age_unknown")}
+            </p>
+            <p className="mt-1.5 flex items-start gap-1.5 text-sm text-stone-300" data-testid={`event-location-${e.id}`}>
+              <MapPin size={14} className="mt-0.5 shrink-0 text-amber-500" />{e.location}
+            </p>
+            <p className="mt-1.5 flex items-start gap-1.5 text-sm text-amber-300" data-testid={`event-datetime-${e.id}`}>
+              <CalendarClock size={14} className="mt-0.5 shrink-0 text-amber-500" />{e[`dates_text_${lang}`] || e.start_date}
+            </p>
+            {e[`recurrence_${lang}`] && (
+              <p className="mt-1.5 flex items-start gap-1.5 text-sm text-stone-300" data-testid={`event-recurrence-${e.id}`}>
+                <Repeat size={14} className="mt-0.5 shrink-0 text-amber-500" />{e[`recurrence_${lang}`]}
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-400">
+              {e[`genre_${lang}`] && <span className="rounded-full bg-blue-900/60 px-2.5 py-0.5 font-semibold text-blue-200">{e[`genre_${lang}`]}</span>}
+              <span className="flex items-center gap-1"><Car size={14} />{e.distance_km} km · {e.drive_time} {t("ev_from_mtl")}</span>
             </div>
-            <h3 className="mt-3 text-xl font-semibold text-amber-50">{e.name}</h3>
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-stone-300"><MapPin size={14} className="text-amber-500" />{e.location}</p>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-stone-400"><Car size={14} />{e.distance_km} km · {e.drive_time} {t("ev_from_mtl")}</p>
             <p className="mt-3 flex-1 text-sm text-stone-400">{e[`description_${lang}`]}</p>
             <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-stone-800 pt-3 text-xs">
-              {e.url && <a href={e.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-amber-400 hover:underline" data-testid={`event-source-${e.id}`}>{t("ev_source")} <ExternalLink size={12} /></a>}
               <span className="text-stone-500">{t("ev_checked")} {new Date(e.last_checked).toLocaleDateString(lang === "fr" ? "fr-CA" : "en-CA")}</span>
               <button onClick={() => navigate(`/build?event=${e.id}`)} className="ml-auto rounded-full bg-amber-500 px-3 py-1 font-semibold text-stone-950" data-testid={`event-attach-${e.id}`}>{t("ev_attach")}</button>
             </div>
