@@ -26,58 +26,77 @@ const toImperial = (cm, kg) => {
   return { ft: cm ? String(ft) : "", inch: cm ? String(Math.round(inches - ft * 12)) : "", lb: kg ? String(Math.round(Number(kg) * 2.20462)) : "" };
 };
 
+const UnitSelect = ({ value, onChange, options, testId }) => (
+  <Select value={value} onValueChange={onChange}>
+    <SelectTrigger className="mt-1.5 w-[92px] shrink-0 bg-stone-950" data-testid={testId}><SelectValue /></SelectTrigger>
+    <SelectContent>{options.map(([v, label]) => <SelectItem key={v} value={v} data-testid={`${testId}-${v}`}>{label}</SelectItem>)}</SelectContent>
+  </Select>
+);
+
 const BodyFields = ({ f, set }) => {
   const { t } = useLang();
-  const [units, setUnits] = useState(() => localStorage.getItem("units") || "metric");
+  const [hUnit, setHUnit] = useState(() => localStorage.getItem("height_unit") || "cm");
+  const [wUnit, setWUnit] = useState(() => localStorage.getItem("weight_unit") || "kg");
   const [imp, setImp] = useState(() => toImperial(f.height_cm, f.weight_kg));
-  const metricKey = `${f.height_cm}|${f.weight_kg}`;
-  const lastSet = useRef(metricKey);
+  const lastSet = useRef({ h: f.height_cm, w: f.weight_kg });
 
+  // Sync imperial boxes only when metric changed from outside them (profile load, cm/kg typing).
   useEffect(() => {
-    if (metricKey !== lastSet.current) setImp(toImperial(f.height_cm, f.weight_kg));
-  }, [metricKey, f.height_cm, f.weight_kg]);
+    const conv = toImperial(f.height_cm, f.weight_kg);
+    if (`${f.height_cm}` !== `${lastSet.current.h}`) setImp((o) => ({ ...o, ft: conv.ft, inch: conv.inch }));
+    if (`${f.weight_kg}` !== `${lastSet.current.w}`) setImp((o) => ({ ...o, lb: conv.lb }));
+    lastSet.current = { h: f.height_cm, w: f.weight_kg };
+  }, [f.height_cm, f.weight_kg]);
 
-  const choose = (u) => { setUnits(u); localStorage.setItem("units", u); setImp(toImperial(f.height_cm, f.weight_kg)); };
+  const pickH = (u) => {
+    setHUnit(u); localStorage.setItem("height_unit", u);
+    const { ft, inch } = toImperial(f.height_cm, f.weight_kg);
+    setImp((o) => ({ ...o, ft, inch }));
+  };
+  const pickW = (u) => {
+    setWUnit(u); localStorage.setItem("weight_unit", u);
+    const { lb } = toImperial(f.height_cm, f.weight_kg);
+    setImp((o) => ({ ...o, lb }));
+  };
   const setImperial = (k) => (e) => {
     const next = { ...imp, [k]: e.target.value };
     setImp(next);
+    if (k === "lb") {
+      const kg = next.lb ? String(Math.round(Number(next.lb) / 2.20462)) : "";
+      lastSet.current = { ...lastSet.current, w: kg };
+      return set("weight_kg")(kg);
+    }
     const inches = Number(next.ft || 0) * 12 + Number(next.inch || 0);
     const cm = next.ft || next.inch ? String(Math.round(inches * 2.54)) : "";
-    const kg = next.lb ? String(Math.round(Number(next.lb) / 2.20462)) : "";
-    lastSet.current = `${cm}|${kg}`;
+    lastSet.current = { ...lastSet.current, h: cm };
     set("height_cm")(cm);
-    set("weight_kg")(kg);
   };
   const opt = <span className="text-stone-500">({t("optional")})</span>;
 
   return (
     <>
-      <div className="sm:col-span-2">
-        <div className="inline-flex rounded-full border border-stone-700 p-0.5 text-xs font-semibold" data-testid="units-toggle">
-          {["metric", "imperial"].map((u) => (
-            <button key={u} type="button" onClick={() => choose(u)} data-testid={`units-${u}-btn`}
-              className={`rounded-full px-3 py-1.5 transition-colors ${units === u ? "bg-amber-500 text-stone-950" : "text-stone-300 hover:text-amber-300"}`}>
-              {t(`units_${u}`)}
-            </button>
-          ))}
+      <div>
+        <Label>{t("ob_height")} {opt}</Label>
+        <div className="flex gap-2">
+          {hUnit === "cm" ? (
+            <UnitInput unit="cm" value={f.height_cm} onChange={(e) => set("height_cm")(e.target.value)} testId="onboarding-height-input" />
+          ) : (
+            <>
+              <UnitInput unit={t("unit_ft")} value={imp.ft} onChange={setImperial("ft")} testId="onboarding-height-ft-input" />
+              <UnitInput unit={t("unit_in")} value={imp.inch} onChange={setImperial("inch")} testId="onboarding-height-in-input" />
+            </>
+          )}
+          <UnitSelect value={hUnit} onChange={pickH} testId="height-unit-select" options={[["cm", "cm"], ["ftin", `${t("unit_ft")} / ${t("unit_in")}`]]} />
         </div>
       </div>
       <div>
-        <Label>{t("ob_height")} {opt}</Label>
-        {units === "metric" ? (
-          <UnitInput unit="cm" value={f.height_cm} onChange={(e) => set("height_cm")(e.target.value)} testId="onboarding-height-input" />
-        ) : (
-          <div className="flex gap-2">
-            <UnitInput unit={t("unit_ft")} value={imp.ft} onChange={setImperial("ft")} testId="onboarding-height-ft-input" />
-            <UnitInput unit={t("unit_in")} value={imp.inch} onChange={setImperial("inch")} testId="onboarding-height-in-input" />
-          </div>
-        )}
-      </div>
-      <div>
         <Label>{t("ob_weight")} {opt}</Label>
-        {units === "metric"
-          ? <UnitInput unit="kg" value={f.weight_kg} onChange={(e) => set("weight_kg")(e.target.value)} testId="onboarding-weight-input" />
-          : <UnitInput unit="lb" value={imp.lb} onChange={setImperial("lb")} testId="onboarding-weight-lb-input" />}
+        <div className="flex gap-2">
+          {wUnit === "kg"
+            ? <UnitInput unit="kg" value={f.weight_kg} onChange={(e) => set("weight_kg")(e.target.value)} testId="onboarding-weight-input" />
+            : <UnitInput unit="lb" value={imp.lb} onChange={setImperial("lb")} testId="onboarding-weight-lb-input" />}
+          <UnitSelect value={wUnit} onChange={pickW} testId="weight-unit-select" options={[["kg", "kg"], ["lb", "lb"]]} />
+        </div>
       </div>
     </>
   );
