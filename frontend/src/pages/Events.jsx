@@ -69,14 +69,14 @@ export default function Events() {
                 <Repeat size={14} className="mt-0.5 shrink-0 text-amber-500" />{e[`recurrence_${lang}`]}
               </p>
             )}
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-400">
-              <span className="flex items-center gap-1"><Car size={14} />{e.distance_km} km · {e.drive_time} {t("ev_from_mtl")}</span>
-            </div>
             {e[`age_range_${lang}`] && (
               <p className="mt-1.5 flex items-start gap-1.5 text-sm text-stone-300" data-testid={`event-age-${e.id}`}>
                 <Users size={14} className="mt-0.5 shrink-0 text-amber-500" />{e[`age_range_${lang}`]}
               </p>
             )}
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-400">
+              <span className="flex items-center gap-1"><Car size={14} />{e.distance_km} km · {e.drive_time} {t("ev_from_mtl")}</span>
+            </div>
             <p className="mt-3 flex-1 text-sm text-stone-400">{e[`description_${lang}`]}</p>
             <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-stone-800 pt-3 text-xs">
               <span className="text-stone-500">{t("ev_checked")} {new Date(e.last_checked).toLocaleDateString(lang === "fr" ? "fr-CA" : "en-CA")}</span>
