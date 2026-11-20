@@ -1,6 +1,7 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Show, UserButton, useAuth } from "@clerk/react";
-import { ShoppingBag, Flame } from "lucide-react";
+import { ShoppingBag, Flame, ChevronDown, Sparkles, Swords } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useLang, money } from "@/lib/i18n";
 import { useApp } from "@/lib/appState";
 
@@ -15,6 +16,30 @@ export const LangToggle = () => {
         </button>
       ))}
     </div>
+  );
+};
+
+const PathMenu = ({ mobile }) => {
+  const { t } = useLang();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const active = pathname === "/build" || pathname === "/interview";
+  const p = mobile ? "mnav" : "nav";
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger data-testid={`${p}-choose-path-trigger`}
+        className={`flex items-center gap-1 whitespace-nowrap rounded-md outline-none transition-colors ${mobile ? "px-3 py-1.5 text-xs" : "px-2.5 py-2 text-sm"} ${active ? "text-amber-400" : "text-stone-300 hover:text-amber-200"}`}>
+        {t("choose_path")} <ChevronDown size={14} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="border-stone-800 bg-stone-950">
+        <DropdownMenuItem onSelect={() => navigate("/build")} data-testid={`${p}-path-a-item`} className="cursor-pointer gap-2">
+          <Swords size={14} className="text-amber-400" />{t("flow_a_title")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate("/interview")} data-testid={`${p}-path-b-item`} className="cursor-pointer gap-2">
+          <Sparkles size={14} className="text-amber-400" />{t("flow_b_title")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
@@ -34,12 +59,13 @@ export const Header = () => {
           <span className="grid h-9 w-9 place-items-center rounded-md bg-gradient-to-br from-amber-500 to-orange-700 text-stone-950">
             <Flame size={18} />
           </span>
-          <span className="hidden font-display text-base font-bold tracking-wide text-amber-50 sm:block">{t("brand")}</span>
+          <span className="hidden whitespace-nowrap font-display text-base font-bold tracking-wide text-amber-50 sm:block">{t("brand")}</span>
         </Link>
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
+            <PathMenu />
             {nav.map(([to, k]) => (
               <NavLink key={to} to={to} data-testid={`nav-${k}`}
-                className={({ isActive }) => `rounded-md px-3 py-2 text-sm transition-colors ${isActive ? "text-amber-400" : "text-stone-300 hover:text-amber-200"}`}>
+                className={({ isActive }) => `whitespace-nowrap rounded-md px-2.5 py-2 text-sm transition-colors ${isActive ? "text-amber-400" : "text-stone-300 hover:text-amber-200"}`}>
                 {t(k)}
               </NavLink>
             ))}
@@ -54,11 +80,12 @@ export const Header = () => {
             </button>
           <Show when="signed-in"><UserButton /></Show>
           <Show when="signed-out">
-            <Link to="/sign-in" data-testid="header-signin-link" className="text-sm text-stone-300 hover:text-amber-300">{t("signin")}</Link>
+            <Link to="/sign-in" data-testid="header-signin-link" className="whitespace-nowrap text-sm text-stone-300 hover:text-amber-300">{t("signin")}</Link>
           </Show>
         </div>
       </div>
-        <nav className="flex gap-1 overflow-x-auto border-t border-stone-800/60 px-3 py-1.5 lg:hidden">
+        <nav className="flex items-center gap-1 overflow-x-auto border-t border-stone-800/60 px-3 py-1.5 lg:hidden">
+          <PathMenu mobile />
           {nav.map(([to, k]) => (
             <NavLink key={to} to={to} data-testid={`mnav-${k}`}
               className={({ isActive }) => `whitespace-nowrap rounded-md px-3 py-1.5 text-xs ${isActive ? "bg-stone-800 text-amber-400" : "text-stone-300"}`}>
